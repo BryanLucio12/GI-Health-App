@@ -44,7 +44,7 @@ fun JournalScreen() {
             Spacer(modifier = Modifier.width(90.dp))
             // button to go back to previous days
             TextButton(
-                onClick = { /* TODO: go to previous day */ },
+                onClick = { /* implement later (go to previous day) */ },
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
@@ -75,7 +75,7 @@ fun JournalScreen() {
 
         // Save button (no functionality yet)
         Button(
-            onClick = { /* TODO: implement later */ },
+            onClick = { /* implement later */ },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text("Save")
