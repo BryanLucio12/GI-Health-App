@@ -23,6 +23,9 @@ import com.example.gihealth.ui.screens.FoodScreen
 import com.example.gihealth.ui.screens.JournalScreen
 import com.example.gihealth.ui.screens.SymptomScreen
 import com.example.gihealth.utils.Constants
+import com.example.gihealth.ui.onboarding.CreatePinScreen
+import com.example.gihealth.ui.onboarding.EnterPinScreen
+import com.example.gihealth.ui.onboarding.UserSetupScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,28 +33,93 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GIHealthTheme {
-                val navController = rememberNavController()
                 Surface(color = Color.White) {
-                    //Scaffold Component
-                    Scaffold(
-                        //Bottom navigation bar
-                        bottomBar = {
-                            BottomNavigationBar(navController = navController)
-                        },
-                        content = { padding ->
-                            //Main Navigation Container
-                            NavHostContainer(
-                                navController = navController,
-                                padding = padding
-                            )
-                        }
-                    )
+                    AppNavigator()
                 }
             }
         }
     }
 }
 
+
+@Composable
+fun AppNavigator(){
+    val navController = rememberNavController()
+
+    var hasPin by remember { mutableStateOf(false) }
+    var userSetUpFinished by remember { mutableStateOf(false) }
+
+    val startDestination = when{
+        !hasPin -> "create_pin"
+        else -> "enter_pin"
+    }
+
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ){
+        composable("create_pin"){
+            CreatePinScreen(
+                navController = navController,
+                onPinCreated = {
+                    hasPin = true
+                    navController.navigate("user_setup"){
+                        popUpTo("create_pin"){ inclusive = true }
+                    }
+
+                }
+            )
+        }
+
+        composable("enter_pin"){
+            EnterPinScreen(
+                navController = navController,
+                loginSuccess = {
+                    if(userSetUpFinished){
+                        navController.navigate("main_app"){
+                            popUpTo("enter_pin") {inclusive = true}
+                        }
+                    }
+                    else{
+                        navController.navigate("user_setup"){
+                            popUpTo("enter_pin") {inclusive = true}
+                        }
+                    }
+                }
+            )
+        }
+
+        composable("user_setup"){
+            UserSetupScreen(
+                onSetUpComplete = {
+                    userSetUpFinished = true
+                    navController.navigate("main_app"){
+                        popUpTo("user_setup") {inclusive = true}
+                    }
+                }
+            )
+        }
+        composable("main_app"){
+            MainNavHost()
+        }
+    }
+}
+
+@Composable
+fun MainNavHost(){
+    val navController = rememberNavController()
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(navController = navController)
+        },
+        content = {padding ->
+            NavHostContainer(
+                navController = navController,
+                padding = padding
+            )
+        }
+    )
+}
 @Composable
 fun NavHostContainer(
     navController: NavHostController,
@@ -138,4 +206,3 @@ fun BottomNavigationBar(navController: NavHostController) {
         }
     }
 }
-
