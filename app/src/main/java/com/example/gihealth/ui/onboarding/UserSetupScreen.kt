@@ -15,12 +15,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun UserSetupScreen(onSetUpComplete: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var triggers by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    var gender by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     val genderOptions = listOf("Male", "Female", "Non-binary" ,"Other", "Prefer not to say")
 
@@ -83,6 +87,39 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
                 )
             )
 
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = gender,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Gender") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color.Gray
+                    )
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    genderOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                gender = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             // Known triggers
             OutlinedTextField(

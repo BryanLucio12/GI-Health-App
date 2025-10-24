@@ -25,6 +25,7 @@ import com.example.gihealth.ui.screens.SymptomScreen
 import com.example.gihealth.utils.Constants
 import com.example.gihealth.ui.onboarding.CreatePinScreen
 import com.example.gihealth.ui.onboarding.EnterPinScreen
+import com.example.gihealth.ui.onboarding.ForgotPinScreen
 import com.example.gihealth.ui.onboarding.UserSetupScreen
 
 class MainActivity : ComponentActivity() {
@@ -98,6 +99,10 @@ fun AppNavigator(){
                     }
                 }
             )
+        }
+
+        composable("forgot_pin"){
+            ForgotPinScreen(navController = navController)
         }
         composable("main_app"){
             MainNavHost()

@@ -108,7 +108,7 @@ fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
 
             TextButton(onClick = {
-                //Need to Implement Forgot Pin
+                navController.navigate("forgot_pin")
             }
             ) {
                 Text(
