@@ -7,12 +7,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.gihealth.ui.theme.GIHealthTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import com.example.gihealth.ui.theme.GIHealthTheme
 
 @Composable
 fun JournalScreen() {
@@ -22,12 +24,20 @@ fun JournalScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Daily Journal", style = MaterialTheme.typography.headlineMedium)
+        // Match Analytics screen style
+        Text(
+            text = "Daily Journal",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 20.dp)
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Date navigation
+        // Centered "Today"
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -57,9 +67,9 @@ fun JournalScreen() {
         Button(
             onClick = {
                 if (journalText.isNotBlank()) {
-                    val formatter = SimpleDateFormat("MMMM d',' yyyy", Locale.getDefault())
+                    val formatter = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
                     val date = formatter.format(Date())
-                    val newEntry = JournalEntry(journalText, date)
+                    val newEntry = JournalEntry(journalText.trim(), date)
                     journalEntries = listOf(newEntry) + journalEntries
                     journalText = ""
                 }
@@ -72,10 +82,17 @@ fun JournalScreen() {
         Spacer(modifier = Modifier.height(24.dp))
 
         // Past entries
-        Text("Past Entries", style = MaterialTheme.typography.titleMedium)
+        Text("Past Entries",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.align(Alignment.Start))
         Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn {
+        // Make list take remaining space so it can scroll
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
             items(journalEntries) { entry ->
                 Card(
                     modifier = Modifier
@@ -83,32 +100,37 @@ fun JournalScreen() {
                         .padding(vertical = 4.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(12.dp)
                     ) {
-                        // Put Date in top-right
+                        // Date in top-right
                         Text(
                             text = entry.date,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.align(Alignment.TopStart)
                         )
-
-                        // vertical space between date and text
-                        Spacer(modifier = Modifier.height(8.dp))
 
                         // Journal text content
-                        Text(
-                            text = entry.text,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 20.dp)
+                        ) {
+                            Text(
+                                text = entry.text,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
 
 data class JournalEntry(
     val text: String,
