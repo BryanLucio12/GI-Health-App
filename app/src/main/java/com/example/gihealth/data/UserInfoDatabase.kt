@@ -5,24 +5,24 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-
 //connecting Entity to the Dao
-@Database(entities = [SymptomEntity::class], version = 1)
-abstract class SymptomDatabase : RoomDatabase() {
 
-    abstract fun symptomDao(): SymptomDao //give DAO
+@Database(entities = [UserInfoEntity::class], version = 1)
+abstract class UserInfoDatabase : RoomDatabase() {
 
+    abstract fun UserInfoDao(): UserInfoDao
     companion object {
         @Volatile
-        private var INSTANCE: SymptomDatabase? = null
+        private var INSTANCE: UserInfoDatabase? = null
+
         //ensure that only one instance exists
-        fun getDatabase(context: Context): SymptomDatabase {
+        fun getDatabase(context: Context): UserInfoDatabase {
 
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    SymptomDatabase::class.java,
-                    "symptom_database"
+                    UserInfoDatabase::class.java,
+                    "user_info_database"
                 ).build()
                 INSTANCE = instance
                 instance

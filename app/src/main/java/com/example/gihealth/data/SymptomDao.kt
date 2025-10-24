@@ -6,6 +6,8 @@ import androidx.room.Query
 import androidx.room.Delete
 import androidx.room.OnConflictStrategy
 
+
+//giving the methods the database has access to insert, newest symptom, delete symptom
 @Dao
 interface SymptomDao {
 
