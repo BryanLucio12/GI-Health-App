@@ -7,61 +7,52 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.gihealth.ui.theme.GIHealthTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun JournalScreen() {
     var journalText by remember { mutableStateOf("") }
-
-    // mock data
-    val mockEntries = listOf(
-        "Felt relaxed and calm today 🌤️",
-        "Had a stressful afternoon but ended the day well.",
-        "Not feeling great — some stomach pain in the evening."
-    )
+    var journalEntries by remember { mutableStateOf(listOf<JournalEntry>()) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
+        // Match Analytics screen style
         Text(
             text = "Daily Journal",
-            style = MaterialTheme.typography.headlineMedium
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 20.dp)
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Centered "Today"
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            //horizontalArrangement = Arrangement.Center
-
+            horizontalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.width(90.dp))
-            // button to go back to previous days
-            TextButton(
-                onClick = { /* implement later (go to previous day) */ },
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(
-                    text = "<",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
             Text(
                 text = "Today",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
             )
         }
 
-        // Input field for journal entry
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Journal entry input
         OutlinedTextField(
             value = journalText,
             onValueChange = { journalText = it },
@@ -73,9 +64,16 @@ fun JournalScreen() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Save button (no functionality yet)
         Button(
-            onClick = { /* implement later */ },
+            onClick = {
+                if (journalText.isNotBlank()) {
+                    val formatter = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+                    val date = formatter.format(Date())
+                    val newEntry = JournalEntry(journalText.trim(), date)
+                    journalEntries = listOf(newEntry) + journalEntries
+                    journalText = ""
+                }
+            },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text("Save")
@@ -83,32 +81,62 @@ fun JournalScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Section title
-        Text(
-            text = "Past Entries",
-            style = MaterialTheme.typography.titleMedium
-        )
-
+        // Past entries
+        Text("Past Entries",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.align(Alignment.Start))
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Mocked list of entries
-        LazyColumn {
-            items(mockEntries) { entry ->
+        // Make list take remaining space so it can scroll
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            items(journalEntries) { entry ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = entry,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        // Date in top-right
+                        Text(
+                            text = entry.date,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.align(Alignment.TopStart)
+                        )
+
+                        // Journal text content
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 20.dp)
+                        ) {
+                            Text(
+                                text = entry.text,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
+
+
+data class JournalEntry(
+    val text: String,
+    val date: String
+)
+
 
 @Preview(showBackground = true)
 @Composable

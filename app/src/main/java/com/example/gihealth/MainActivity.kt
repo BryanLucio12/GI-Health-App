@@ -17,11 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.gihealth.ui.screens.AddNewScreen
-import com.example.gihealth.ui.screens.AnalyticsScreen
-import com.example.gihealth.ui.screens.FoodScreen
-import com.example.gihealth.ui.screens.JournalScreen
-import com.example.gihealth.ui.screens.SymptomScreen
+import com.example.gihealth.ui.screens.*
 import com.example.gihealth.utils.Constants
 import com.example.gihealth.ui.onboarding.CreatePinScreen
 import com.example.gihealth.ui.onboarding.EnterPinScreen
@@ -142,7 +138,7 @@ fun NavHostContainer(
         builder = {
             // route : go to food screen
             composable("food") {
-                FoodScreen()
+                FoodScreen(navController)
             }
             // route : go to symptom screen
             composable("symptoms") {
@@ -150,7 +146,7 @@ fun NavHostContainer(
             }
             // route : go to Add New screen
             composable("add") {
-                AddNewScreen()
+                AddNewScreen(navController)
             }
             // route : go to Journal screen
             composable("journal") {
@@ -159,6 +155,18 @@ fun NavHostContainer(
             // route : go to Analytics screen
             composable("analytics") {
                 AnalyticsScreen()
+            }
+
+            composable("logFood") {
+                LogFoodScreen()
+            }
+
+            composable("logSymptom") {
+                LogSymptomScreen()
+            }
+
+            composable("logWeight") {
+                LogWeightScreen()
             }
         })
 }

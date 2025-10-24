@@ -1,34 +1,125 @@
 package com.example.gihealth.ui.screens
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+//import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 
 @Composable
-fun AddNewScreen() {
+fun AddNewScreen(navController: NavHostController) {
+    val cardColor = Color(0xFF0F9D58)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Icon on the screen
-        Icon(
-            imageVector = Icons.Default.AddCircle,
-            contentDescription = "AddNew",
-            tint = Color(0xFF0F9D58)
+        // Title at the top
+        Text(
+            text = "Add New Entry",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 20.dp)
         )
-        // Text on the screen
-        Text(text = "AddNew", color = Color.Black)
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Grid area centered on screen
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // First row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                AddNewCard(
+                    title = "Log Food",
+                    icon = Icons.Default.Fastfood,
+                    backgroundColor = cardColor,
+                    onClick = { navController.navigate("logFood") }
+                )
+                AddNewCard(
+                    title = "Log Symptom",
+                    icon = Icons.Default.Favorite,
+                    backgroundColor = cardColor,
+                    onClick = { navController.navigate("logSymptom") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // Second row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                AddNewCard(
+                    title = "Add to Journal",
+                    icon = Icons.Default.Edit,
+                    backgroundColor = cardColor,
+                    onClick = { navController.navigate("journal") }
+                )
+                AddNewCard(
+                    title = "Log Weight",
+                    icon = Icons.Default.MonitorWeight,
+                    backgroundColor = cardColor,
+                    onClick = { navController.navigate("logWeight") }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddNewCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    backgroundColor: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .size(170.dp) // 🔹 slightly bigger cards
+            .padding(8.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = Color.White,
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = title,
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
     }
 }
