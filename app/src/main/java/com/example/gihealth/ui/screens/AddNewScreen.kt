@@ -32,7 +32,6 @@ fun AddNewScreen(navController: NavHostController) {
             text = "Add New Entry",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(top = 20.dp)
         )
 

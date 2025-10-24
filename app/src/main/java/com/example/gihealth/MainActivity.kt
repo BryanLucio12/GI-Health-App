@@ -65,7 +65,7 @@ fun NavHostContainer(
         builder = {
             // route : go to food screen
             composable("food") {
-                FoodScreen()
+                FoodScreen(navController)
             }
             // route : go to symptom screen
             composable("symptoms") {
