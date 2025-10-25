@@ -46,6 +46,7 @@ fun AppNavigator(){
     var hasPin by remember { mutableStateOf(false) }
     var userSetUpFinished by remember { mutableStateOf(false) }
 
+    //If user does not have pin then create a pin
     val startDestination = when{
         !hasPin -> "create_pin"
         else -> "enter_pin"
@@ -55,6 +56,8 @@ fun AppNavigator(){
         navController = navController,
         startDestination = startDestination
     ){
+
+        //Create pin screen
         composable("create_pin"){
             CreatePinScreen(
                 navController = navController,
@@ -68,6 +71,7 @@ fun AppNavigator(){
             )
         }
 
+        //Enter Pin screen
         composable("enter_pin"){
             EnterPinScreen(
                 navController = navController,
@@ -86,6 +90,7 @@ fun AppNavigator(){
             )
         }
 
+        //User set up screen
         composable("user_setup"){
             UserSetupScreen(
                 onSetUpComplete = {
@@ -97,9 +102,12 @@ fun AppNavigator(){
             )
         }
 
+        //Forgot pin screen
         composable("forgot_pin"){
             ForgotPinScreen(navController = navController)
         }
+
+        //Main application
         composable("main_app"){
             MainNavHost()
         }

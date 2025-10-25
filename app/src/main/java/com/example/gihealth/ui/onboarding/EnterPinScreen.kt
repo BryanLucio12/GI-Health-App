@@ -80,6 +80,7 @@ fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
                 )
             }
 
+            //Action when they press continue
             Button(
                 onClick = {
                     if (pin.length != 4) {
@@ -94,8 +95,7 @@ fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
+                shape = RoundedCornerShape(25.dp)
             ) {
                 Text(
                     "Continue",
@@ -107,6 +107,7 @@ fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            //Forgot your pin
             TextButton(onClick = {
                 navController.navigate("forgot_pin")
             }

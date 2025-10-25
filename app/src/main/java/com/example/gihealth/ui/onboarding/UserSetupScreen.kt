@@ -23,10 +23,16 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
     var weight by remember { mutableStateOf("") }
     var triggers by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var bloodType by remember { mutableStateOf("") }
 
     var gender by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
     val genderOptions = listOf("Male", "Female", "Non-binary" ,"Other", "Prefer not to say")
+
+
+    var bloodTypeExpanded by remember { mutableStateOf(false) }
+    val bloodTypeOptions = listOf("A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "Not sure")
 
     Box(
         modifier = Modifier
@@ -77,8 +83,12 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
             // Weight field
             OutlinedTextField(
                 value = weight,
-                onValueChange = { weight = it },
-                label = { Text("Weight (lbs)") },
+                onValueChange = {
+                    weight = it
+                },
+                label = {
+                    Text("Weight (lbs)")
+                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -87,34 +97,101 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
                 )
             )
 
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Gender dropdown
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = gender,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Gender") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        modifier = Modifier
+                            .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color.Gray
+                        )
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = {
+                            expanded = false
+                        }
+                    ) {
+                        genderOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    gender = option
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Age field
                 OutlinedTextField(
-                    value = gender,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Gender") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    value = age,
+                    onValueChange = { input ->
+                        if (input.all { it.isDigit() } && input.length <= 3) {
+                            age = input
+                        }
+                    },
+                    label = { Text("Age") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
+                        .weight(1f)
+                        .align(Alignment.CenterVertically),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedBorderColor = Color.Gray
                     )
                 )
+            }
+
+
+            // Blood Type dropdown
+            ExposedDropdownMenuBox(
+                expanded = bloodTypeExpanded,
+                onExpandedChange = { bloodTypeExpanded = !bloodTypeExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = bloodType,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Blood Type") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = bloodTypeExpanded)
+                    },
+                    modifier = Modifier
+                        .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
+                        .fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Color.Gray)
+                )
 
                 ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    expanded = bloodTypeExpanded,
+                    onDismissRequest = { bloodTypeExpanded = false }
                 ) {
-                    genderOptions.forEach { option ->
+                    bloodTypeOptions.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option) },
                             onClick = {
-                                gender = option
-                                expanded = false
+                                bloodType = option
+                                bloodTypeExpanded = false
                             }
                         )
                     }
@@ -150,6 +227,7 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
             // Continue button
             Button(
                 onClick = {
+                    //Checks if name or weight is empty
                     if (name.isBlank() || weight.isBlank()) {
                         errorMessage = "Please fill out your name and weight."
                     }
@@ -160,10 +238,8 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
-            ) {
+                    .height(52.dp)
+            ){
                 Text("Continue", color = Color.White, fontSize = 18.sp)
             }
         }

@@ -73,7 +73,7 @@ fun ForgotPinScreen(navController: NavController) {
                         confirmPin = it
                 },
                 label = { Text("Confirm New PIN") },
-                keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),

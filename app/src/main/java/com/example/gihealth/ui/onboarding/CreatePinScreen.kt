@@ -51,14 +51,16 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(40.dp))
+
             Text(
                 text = "Create Your PIN",
                 fontSize = 23.sp,
                 fontWeight = FontWeight.SemiBold,
-
             )
+
             OutlinedTextField(
                 value = pin,
+                //Pin is 4 digits in length
                 onValueChange = {
                     if (it.length <= 4)
                         pin = it
@@ -79,7 +81,7 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
             OutlinedTextField(
                 value = confirmPin,
                 onValueChange = {
-
+                    //Length of pin is 4
                     if (it.length <= 4)
                         confirmPin = it
                 },
@@ -105,6 +107,8 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
                 )
             }
 
+
+            //Confirm Pin
             Button(
                 onClick = {
                     when {
@@ -123,8 +127,12 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
+
             ){
-                Text("Confirm")
+                Text("Confirm",
+                  color = Color.White
+                )
+
             }
         }
     }
