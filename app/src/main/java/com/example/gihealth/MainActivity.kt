@@ -143,6 +143,15 @@ fun NavHostContainer(
         composable("journal")  {
             JournalScreen()
         }
+        composable("logFood") {
+            LogFoodScreen()
+        }
+        composable("logSymptom") {
+            LogSymptomScreen()
+        }
+        composable("logWeight") {
+            LogWeightScreen()
+        }
 
         composable("analytics") {
             AnalyticsScreen(
