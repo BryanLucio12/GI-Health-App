@@ -4,25 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.*
 import androidx.compose.ui.Modifier
-import com.example.gihealth.ui.theme.GIHealthTheme
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.gihealth.ui.screens.*
-import com.example.gihealth.utils.Constants
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.gihealth.ui.onboarding.CreatePinScreen
 import com.example.gihealth.ui.onboarding.EnterPinScreen
 import com.example.gihealth.ui.onboarding.ForgotPinScreen
 import com.example.gihealth.ui.onboarding.UserSetupScreen
+import com.example.gihealth.ui.screens.*
+import com.example.gihealth.ui.theme.GIHealthTheme
+import com.example.gihealth.utils.Constants
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,190 +38,146 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
-fun AppNavigator(){
+fun AppNavigator() {
     val navController = rememberNavController()
 
     var hasPin by remember { mutableStateOf(false) }
     var userSetUpFinished by remember { mutableStateOf(false) }
 
-    //If user does not have pin then create a pin
-    val startDestination = when{
-        !hasPin -> "create_pin"
-        else -> "enter_pin"
-    }
+    val startDestination = if (!hasPin) "create_pin" else "enter_pin"
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ){
+    NavHost(navController = navController, startDestination = startDestination) {
 
-        //Create pin screen
-        composable("create_pin"){
+        // ➡️ Create PIN
+        composable("create_pin") {
             CreatePinScreen(
                 navController = navController,
                 onPinCreated = {
                     hasPin = true
-                    navController.navigate("user_setup"){
-                        popUpTo("create_pin"){ inclusive = true }
+                    navController.navigate("user_setup") {
+                        popUpTo("create_pin") { inclusive = true }
                     }
-
                 }
             )
         }
 
-        //Enter Pin screen
-        composable("enter_pin"){
+        // ➡️ Enter PIN
+        composable("enter_pin") {
             EnterPinScreen(
                 navController = navController,
                 loginSuccess = {
-                    if(userSetUpFinished){
-                        navController.navigate("main_app"){
-                            popUpTo("enter_pin") {inclusive = true}
+                    if (userSetUpFinished) {
+                        navController.navigate("main_app") {
+                            popUpTo("enter_pin") { inclusive = true }
                         }
-                    }
-                    else{
-                        navController.navigate("user_setup"){
-                            popUpTo("enter_pin") {inclusive = true}
+                    } else {
+                        navController.navigate("user_setup") {
+                            popUpTo("enter_pin") { inclusive = true }
                         }
                     }
                 }
             )
         }
 
-        //User set up screen
-        composable("user_setup"){
+        // ➡️ User Setup
+        composable("user_setup") {
             UserSetupScreen(
                 onSetUpComplete = {
                     userSetUpFinished = true
-                    navController.navigate("main_app"){
-                        popUpTo("user_setup") {inclusive = true}
+                    navController.navigate("main_app") {
+                        popUpTo("user_setup") { inclusive = true }
                     }
                 }
             )
         }
 
-        //Forgot pin screen
-        composable("forgot_pin"){
+        // ➡️ Forgot PIN
+        composable("forgot_pin") {
             ForgotPinScreen(navController = navController)
         }
 
-        //Main application
-        composable("main_app"){
+        // ➡️ Main App
+        composable("main_app") {
             MainNavHost()
         }
     }
 }
 
 @Composable
-fun MainNavHost(){
+fun MainNavHost() {
     val navController = rememberNavController()
+
     Scaffold(
-        bottomBar = {
-            BottomNavigationBar(navController = navController)
-        },
-        content = {padding ->
-            NavHostContainer(
-                navController = navController,
-                padding = padding
-            )
-        }
-    )
+        bottomBar = { BottomNavigationBar(navController = navController) }
+    ) { padding ->
+        NavHostContainer(
+            navController = navController,
+            padding = padding
+        )
+    }
 }
+
 @Composable
 fun NavHostContainer(
     navController: NavHostController,
     padding: PaddingValues
 ) {
+    val vm: CalendarViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
     NavHost(
         navController = navController,
-
-        // set the start destination as food screen
         startDestination = "food",
+        modifier = Modifier.padding(padding)
+    )
+    {
+        composable("food")     {
+            FoodScreen(navController)
+        }
+        composable("symptoms") {
+            SymptomScreen()
+        }
+        composable("add")      {
+            AddNewScreen(navController)
+        }
+        composable("journal")  {
+            JournalScreen()
+        }
 
-        // Set the padding provided by scaffold
-        modifier = Modifier.padding(paddingValues = padding),
+        composable("analytics") {
+            AnalyticsScreen(
+                onOpenCalendar = { navController.navigate("calendar") },
+                vm = vm
+            )
+        }
 
-        builder = {
-            // route : go to food screen
-            composable("food") {
-                FoodScreen(navController)
-            }
-            // route : go to symptom screen
-            composable("symptoms") {
-                SymptomScreen()
-            }
-            // route : go to Add New screen
-            composable("add") {
-                AddNewScreen(navController)
-            }
-            // route : go to Journal screen
-            composable("journal") {
-                JournalScreen()
-            }
-            // route : go to Analytics screen
-            composable("analytics") {
-                AnalyticsScreen()
-            }
-
-            composable("logFood") {
-                LogFoodScreen()
-            }
-
-            composable("logSymptom") {
-                LogSymptomScreen()
-            }
-
-            composable("logWeight") {
-                LogWeightScreen()
-            }
-        })
+        composable("calendar") {
+            FullCalendarScreen(
+                onClose = { navController.popBackStack() },
+                vm = vm
+            )
+        }
+    }
 }
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
-    NavigationBar(
-        // set background color of the bottom bar
-        containerColor = Color(0xFF0F9D58)) {
-
-        // observe the backstack
+    NavigationBar(containerColor = Color(0xFF0F9D58)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-        // observe current route to change the icon
-        // color,label color when navigated
         val currentRoute = navBackStackEntry?.destination?.route
 
-        // Bottom nav items we declared
-        Constants.BottomNavItems.forEach { navItem ->
-
-            // Place the bottom nav items
+        Constants.BottomNavItems.forEach { item ->
             NavigationBarItem(
-
-                // it currentRoute is equal then its selected route
-                selected = currentRoute == navItem.route,
-
-                // navigate on click
-                onClick = {
-                    navController.navigate(navItem.route)
-                },
-
-                // Icon of navItem
-                icon = {
-                    Icon(imageVector = navItem.icon, contentDescription = navItem.label)
-                },
-
-                // label
-                label = {
-                    Text(text = navItem.label)
-                },
+                selected = currentRoute == item.route,
+                onClick = { navController.navigate(item.route) },
+                icon = { Icon(imageVector = item.icon, contentDescription = item.label) },
+                label = { Text(item.label) },
                 alwaysShowLabel = true,
-
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White, // Icon color when selected
-                    unselectedIconColor = Color.White, // Icon color when not selected
-                    selectedTextColor = Color.White, // Label color when selected
-                    indicatorColor = Color(0xFF195334) // Highlight color for selected item
+                    selectedIconColor = Color.White,
+                    unselectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = Color(0xFF195334)
                 )
             )
         }
