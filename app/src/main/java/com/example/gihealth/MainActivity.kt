@@ -151,6 +151,18 @@ fun NavHostContainer(
             )
         }
 
+        composable("logFood") {
+            LogFoodScreen()
+        }
+
+        composable("logSymptom") {
+            LogSymptomScreen()
+        }
+
+        composable("logWeight") {
+            LogWeightScreen()
+        }
+
         composable("calendar") {
             FullCalendarScreen(
                 onClose = { navController.popBackStack() },
