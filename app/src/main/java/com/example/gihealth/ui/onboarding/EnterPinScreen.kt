@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
 @Composable
-fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
+fun EnterPinScreen(navController: NavController, savedPin: String, loginSuccess: () -> Unit) {
     var pin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -83,13 +83,18 @@ fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
             //Action when they press continue
             Button(
                 onClick = {
-                    if (pin.length != 4) {
-                        errorMessage = "Please enter your 4-digit PIN"
-                    }
-                    else{
-                        errorMessage = ""
-                        navController.navigate("main_app")
-                        loginSuccess()
+                    when {
+                        pin.length != 4 ->
+                            errorMessage = "Please enter your 4-digit PIN"
+                        pin != savedPin ->
+                            errorMessage = "Incorrect PIN. Try again."
+                        else -> {
+                            errorMessage = ""
+                            navController.navigate("main_app") {
+                                popUpTo("enter_pin") { inclusive = true }
+                            }
+                            loginSuccess()
+                        }
                     }
                 },
                 modifier = Modifier
@@ -107,13 +112,8 @@ fun EnterPinScreen(navController: NavController, loginSuccess: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            //Forgot your pin
-            TextButton(onClick = {
-                navController.navigate("forgot_pin")
-            }
-            ) {
-                Text(
-                    "Forgot PIN?",
+            TextButton(onClick = { navController.navigate("forgot_pin") }) {
+                Text("Forgot PIN?",
                     color = Color.Blue
                 )
             }

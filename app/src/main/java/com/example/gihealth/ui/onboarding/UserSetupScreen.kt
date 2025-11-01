@@ -14,11 +14,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.gihealth.data.UserInfoViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
-fun UserSetupScreen(onSetUpComplete: () -> Unit) {
+fun UserSetupScreen(userInfoViewModel: UserInfoViewModel, onSetUpComplete: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var triggers by remember { mutableStateOf("") }
@@ -33,6 +35,8 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
 
     var bloodTypeExpanded by remember { mutableStateOf(false) }
     val bloodTypeOptions = listOf("A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "Not sure")
+
+
 
     Box(
         modifier = Modifier
@@ -233,6 +237,18 @@ fun UserSetupScreen(onSetUpComplete: () -> Unit) {
                     }
                     else {
                         errorMessage = ""
+                        //saves info to db through viewmodel
+                        userInfoViewModel.saveUserInfo(
+                            name = name,
+                            age = age.toIntOrNull() ?: 0,
+                            bloodType = bloodType,
+                            weight = weight.toFloatOrNull() ?: 0f,
+                            gender = gender,
+                            disease = "",
+                            triggers = triggers
+
+                        )
+                        //go to main app screen
                         onSetUpComplete()
                     }
                 },
