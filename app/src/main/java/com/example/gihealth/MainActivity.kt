@@ -22,7 +22,14 @@ import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gihealth.data.UserInfoViewModel
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,20 +48,35 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigator() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    // Initialize the userinfo viewmodel to access userinfo db
+    val userInfoViewModel: UserInfoViewModel =
+        androidx.lifecycle.viewmodel.compose.viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory(context.applicationContext as android.app.Application)
+        )
+    //look at userinfo livedata to know if account already set up
+    val userInfo by userInfoViewModel.userInfo.observeAsState()
+    //if pin already created
+    val hasPin = userInfo?.pin?.let { it != 0 } ?: false
+    //if user has already completed setup name required
+    val hasSetupCompleted = userInfo?.name?.isNotBlank() == true
+    //determine the first screen shown based on pin and setup status
+    val startDestination = when {
+        !hasPin -> "create_pin"
+        !hasSetupCompleted -> "user_setup"
+        else -> "enter_pin"
+    }
 
-    var hasPin by remember { mutableStateOf(false) }
-    var userSetUpFinished by remember { mutableStateOf(false) }
-
-    val startDestination = if (!hasPin) "create_pin" else "enter_pin"
 
     NavHost(navController = navController, startDestination = startDestination) {
+
 
         // ➡️ Create PIN
         composable("create_pin") {
             CreatePinScreen(
                 navController = navController,
                 onPinCreated = {
-                    hasPin = true
+
                     navController.navigate("user_setup") {
                         popUpTo("create_pin") { inclusive = true }
                     }
@@ -67,7 +89,7 @@ fun AppNavigator() {
             EnterPinScreen(
                 navController = navController,
                 loginSuccess = {
-                    if (userSetUpFinished) {
+                    if (userInfo?.name?.isNotBlank()==true) {
                         navController.navigate("main_app") {
                             popUpTo("enter_pin") { inclusive = true }
                         }
@@ -83,8 +105,9 @@ fun AppNavigator() {
         // ➡️ User Setup
         composable("user_setup") {
             UserSetupScreen(
+                userInfoViewModel=userInfoViewModel, //pass viewmodel to save user info
                 onSetUpComplete = {
-                    userSetUpFinished = true
+
                     navController.navigate("main_app") {
                         popUpTo("user_setup") { inclusive = true }
                     }

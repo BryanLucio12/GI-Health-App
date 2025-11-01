@@ -14,5 +14,8 @@ data class UserInfoEntity(
     val age: Int,
     val bloodType: String,
     val weight: Float,
-    val disease: String
+    val gender: String,
+    val disease: String,
+    val triggers: String,
+    val pin: Int
 )
