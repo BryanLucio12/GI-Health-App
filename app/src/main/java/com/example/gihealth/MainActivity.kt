@@ -47,15 +47,18 @@ fun AppNavigator() {
 
     val startDestination = if (!hasPin) "create_pin" else "enter_pin"
 
+    var savedPin by remember { mutableStateOf("") }
+
     NavHost(navController = navController, startDestination = startDestination) {
 
         // ➡️ Create PIN
         composable("create_pin") {
             CreatePinScreen(
                 navController = navController,
-                onPinCreated = {
+                onPinCreated = {pin ->
+                    savedPin = pin
                     hasPin = true
-                    navController.navigate("user_setup") {
+                    navController.navigate("enter_pin") {
                         popUpTo("create_pin") { inclusive = true }
                     }
                 }
@@ -66,6 +69,7 @@ fun AppNavigator() {
         composable("enter_pin") {
             EnterPinScreen(
                 navController = navController,
+                savedPin = savedPin,
                 loginSuccess = {
                     if (userSetUpFinished) {
                         navController.navigate("main_app") {
@@ -79,7 +83,6 @@ fun AppNavigator() {
                 }
             )
         }
-
         // ➡️ User Setup
         composable("user_setup") {
             UserSetupScreen(
@@ -94,7 +97,14 @@ fun AppNavigator() {
 
         // ➡️ Forgot PIN
         composable("forgot_pin") {
-            ForgotPinScreen(navController = navController)
+            ForgotPinScreen(
+                onNewPinSaved = { newPin ->
+                    savedPin = newPin
+                    navController.navigate("enter_pin") {
+                        popUpTo("forgot_pin") { inclusive = true }
+                    }
+                }
+            )
         }
 
         // ➡️ Main App
@@ -125,17 +135,25 @@ fun NavHostContainer(
 ) {
     val vm: CalendarViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 
+    val symptomViewModel: SymptomViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+    val mealLogs = remember { mutableStateListOf<Map<String, String>>() }
+
+
     NavHost(
         navController = navController,
-        startDestination = "food",
+        startDestination = "add",
         modifier = Modifier.padding(padding)
     )
     {
-        composable("food")     {
-            FoodScreen(navController)
+        composable("food") {
+            FoodScreen(
+                navController = navController,
+                mealLogs = mealLogs
+            )
         }
         composable("symptoms") {
-            SymptomScreen()
+            SymptomScreen(navController = navController, vm = symptomViewModel)
         }
         composable("add")      {
             AddNewScreen(navController)
@@ -144,10 +162,26 @@ fun NavHostContainer(
             JournalScreen()
         }
         composable("logFood") {
-            LogFoodScreen()
+            LogFoodScreen(
+                onSave = { food, time, meal, ingredients, date ->
+                    mealLogs.add(
+                        mapOf(
+                            "food" to food,
+                            "time" to time,
+                            "meal" to meal,
+                            "ingredients" to ingredients,
+                            "date" to date
+                        )
+                    )
+                    navController.popBackStack()
+                },
+                onBackPressed = { navController.popBackStack() }
+            )
         }
         composable("logSymptom") {
-            LogSymptomScreen()
+            LogSymptomScreen(navController = navController,
+                symptomViewModel = symptomViewModel
+            )
         }
         composable("logWeight") {
             LogWeightScreen()
@@ -160,13 +194,6 @@ fun NavHostContainer(
             )
         }
 
-        composable("logFood") {
-            LogFoodScreen()
-        }
-
-        composable("logSymptom") {
-            LogSymptomScreen()
-        }
 
         composable("logWeight") {
             LogWeightScreen()

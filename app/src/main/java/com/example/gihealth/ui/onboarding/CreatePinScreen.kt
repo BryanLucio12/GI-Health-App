@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
 @Composable
-fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
+fun CreatePinScreen(navController: NavController, onPinCreated: (String) -> Unit) {
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -112,27 +112,24 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
             Button(
                 onClick = {
                     when {
-                        //Checks if pin is 4 digits long
                         pin.length != 4 || confirmPin.length != 4 ->
                             errorMessage = "PIN must be 4 digits"
-                        //Checks if the pins match
                         pin != confirmPin ->
                             errorMessage = "PINs do not match"
                         else -> {
-                            //No error message and goes to next part of app
                             errorMessage = ""
-                            navController.navigate("enter_pin")
-                            onPinCreated()
+                            onPinCreated(pin)
+                            navController.navigate("enter_pin") {
+                                popUpTo("create_pin") { inclusive = true }
+                            }
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-
-            ){
+            ) {
                 Text("Confirm",
-                  color = Color.White
+                    color = Color.White
                 )
-
             }
         }
     }

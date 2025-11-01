@@ -17,8 +17,11 @@ import androidx.navigation.NavHostController
 import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
-fun FoodScreen(navController: NavHostController) {
-    val meals = listOf("Breakfast", "Lunch", "Dinner", "Snacks")
+fun FoodScreen(
+    navController: NavHostController,
+    mealLogs: List<Map<String, String>>
+) {
+    val mealTypes = listOf("Breakfast", "Lunch", "Dinner", "Snack")
 
     Column(
         modifier = Modifier
@@ -60,18 +63,20 @@ fun FoodScreen(navController: NavHostController) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(meals) { meal ->
-                MealCard(meal)
+            items(mealTypes) { type ->
+                MealCard(
+                    label = type,
+                    logs = mealLogs.filter { it["meal"] == type }
+                )
             }
         }
     }
 }
 
 @Composable
-fun MealCard(label: String) {
+fun MealCard(label: String, logs: List<Map<String, String>>) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -86,12 +91,28 @@ fun MealCard(label: String) {
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // placeholder text, can be replaced with actual data later
-            Text(
-                text = "No items logged yet.",
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
+            if (logs.isEmpty()) {
+                Text(
+                    text = "No items logged yet.",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            } else {
+                logs.forEach { log ->
+                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                        Text(
+                            text = log["food"] ?: "",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "${log["time"]} — ${log["ingredients"]}",
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
         }
     }
 }

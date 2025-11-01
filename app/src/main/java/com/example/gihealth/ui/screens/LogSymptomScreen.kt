@@ -1,34 +1,187 @@
 package com.example.gihealth.ui.screens
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+data class LoggedMeal(
+    val food: String,
+    val time: String,
+    val mealType: String,
+    val ingredients: String,
+    val date: String
+)
+
+class FoodViewModel : ViewModel() {
+    // Keeps all logged meals in memory
+    var loggedMeals = mutableStateListOf<LoggedMeal>()
+        private set
+
+    fun addMeal(food: String, time: String, meal: String, ingredients: String) {
+        val today = LocalDate.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+        val newMeal = LoggedMeal(food, time, meal, ingredients, today)
+        loggedMeals.add(newMeal)
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LogSymptomScreen(
+    navController: NavController,
+    symptomViewModel: SymptomViewModel = viewModel()
+) {
+    val symptomRatings = remember { mutableStateMapOf<String, Float>() }
+    val symptomNotes = remember { mutableStateMapOf<String, String>() }
+
+    val previousRoute = remember { navController.previousBackStackEntry?.destination?.route }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(
+                    "Log Symptoms",
+                    fontWeight = FontWeight.Bold
+                ) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black
+                )
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Text(
+                    "Rate your symptoms today",
+                    color = Color.DarkGray
+                )
+            }
+
+            items(symptomViewModel.symptoms.size) { index ->
+                val symptom = symptomViewModel.symptoms[index]
+                SymptomLogCard(
+                    symptomName = symptom,
+                    rating = symptomRatings[symptom] ?: 0f,
+                    note = symptomNotes[symptom] ?: "",
+                    onRatingChange = { newValue -> symptomRatings[symptom] = newValue },
+                    onNoteChange = { newNote -> symptomNotes[symptom] = newNote }
+                )
+            }
+
+            item {
+                Spacer(Modifier.height(20.dp))
+                Button(
+                    onClick = {
+                        symptomRatings.forEach { (symptom, value) ->
+                            val note = symptomNotes[symptom] ?: ""
+                            if (value > 0) {
+                                symptomViewModel.logSymptom(symptom, value.toInt(), note)
+                            }
+                        }
+
+                        if (previousRoute != null)
+                            navController.popBackStack()
+                        else navController.navigate("symptoms") {
+                            popUpTo("symptoms") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
+                    shape = RoundedCornerShape(25.dp)
+                ) {
+                    Text(
+                        "Save Symptoms",
+                        color = Color.White,
+                        fontSize = 18.sp
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
-fun LogSymptomScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+fun SymptomLogCard(
+    symptomName: String,
+    rating: Float,
+    note: String,
+    onRatingChange: (Float) -> Unit,
+    onNoteChange: (String) -> Unit
+) {
+    val sliderColor = Color(0xFF0F9D58)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        // Icon on the screen
-        Icon(
-            imageVector = Icons.Default.Favorite,
-            contentDescription = "Log a Symptom",
-            tint = Color(0xFF0F9D58)
-        )
-        // Text on the screen
-        Text(text = "Log a Symptom", color = Color.Black)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(symptomName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+
+            // Show current value
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Severity", color = Color.Gray, fontSize = 14.sp)
+                Text(
+                    text = "${rating.toInt()} / 10",
+                    color = sliderColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+
+            Slider(
+                value = rating,
+                onValueChange = onRatingChange,
+                valueRange = 0f..10f,
+                steps = 9,
+                colors = SliderDefaults.colors(
+                    thumbColor = sliderColor,
+                    activeTrackColor = sliderColor,
+                    inactiveTrackColor = sliderColor.copy(alpha = 0.3f)
+                )
+            )
+
+            OutlinedTextField(
+                value = note,
+                onValueChange = onNoteChange,
+                placeholder = { Text("Add a note (optional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
