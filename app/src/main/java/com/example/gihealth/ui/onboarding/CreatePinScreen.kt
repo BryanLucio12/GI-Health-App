@@ -16,12 +16,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.gihealth.data.UserInfoViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 @Composable
-fun CreatePinScreen(navController: NavController, onPinCreated: (String) -> Unit) {
+fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val userInfoViewModel: UserInfoViewModel = viewModel(
+        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as android.app.Application
+        )
+    )
 
 
     Box(
@@ -112,24 +122,28 @@ fun CreatePinScreen(navController: NavController, onPinCreated: (String) -> Unit
             Button(
                 onClick = {
                     when {
+                        //Checks if pin is 4 digits long
                         pin.length != 4 || confirmPin.length != 4 ->
                             errorMessage = "PIN must be 4 digits"
+                        //Checks if the pins match
                         pin != confirmPin ->
                             errorMessage = "PINs do not match"
                         else -> {
+                            //No error message and goes to next part of app
                             errorMessage = ""
-                            onPinCreated(pin)
-                            navController.navigate("enter_pin") {
-                                popUpTo("create_pin") { inclusive = true }
-                            }
+                            userInfoViewModel.saveUserPin(pin.toInt())
+                            navController.navigate("enter_pin")
+                            onPinCreated()
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) {
+
+            ){
                 Text("Confirm",
-                    color = Color.White
+                  color = Color.White
                 )
+
             }
         }
     }

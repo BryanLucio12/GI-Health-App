@@ -22,7 +22,11 @@ import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
+import com.example.gihealth.data.UserInfoViewModel
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.Composable
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,24 +45,37 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigator() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    // Initialize the userinfo viewmodel to access userinfo db
+    val userInfoViewModel: UserInfoViewModel =
+        androidx.lifecycle.viewmodel.compose.viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory(context.applicationContext as android.app.Application)
+        )
+    //look at userinfo livedata to know if account already set up
+    val userInfo by userInfoViewModel.userInfo.observeAsState()
+    //if pin already created
+    val hasPin = userInfo?.pin?.let { it != 0 } ?: false
+    //if user has already completed setup name required
+    val hasSetupCompleted = userInfo?.name?.isNotBlank() == true
+    //determine the first screen shown based on pin and setup status
+    val savedPin = userInfo?.pin?.toString() ?: ""
+    val startDestination = when {
+        !hasPin -> "create_pin"
+        !hasSetupCompleted -> "user_setup"
+        else -> "enter_pin"
+    }
 
-    var hasPin by remember { mutableStateOf(false) }
-    var userSetUpFinished by remember { mutableStateOf(false) }
-
-    val startDestination = if (!hasPin) "create_pin" else "enter_pin"
-
-    var savedPin by remember { mutableStateOf("") }
 
     NavHost(navController = navController, startDestination = startDestination) {
+
 
         // ➡️ Create PIN
         composable("create_pin") {
             CreatePinScreen(
                 navController = navController,
-                onPinCreated = {pin ->
-                    savedPin = pin
-                    hasPin = true
-                    navController.navigate("enter_pin") {
+                onPinCreated = {
+
+                    navController.navigate("user_setup") {
                         popUpTo("create_pin") { inclusive = true }
                     }
                 }
@@ -67,11 +84,12 @@ fun AppNavigator() {
 
         // ➡️ Enter PIN
         composable("enter_pin") {
+
             EnterPinScreen(
-                navController = navController,
                 savedPin = savedPin,
+                navController = navController,
                 loginSuccess = {
-                    if (userSetUpFinished) {
+                    if (userInfo?.name?.isNotBlank()==true) {
                         navController.navigate("main_app") {
                             popUpTo("enter_pin") { inclusive = true }
                         }
@@ -83,11 +101,13 @@ fun AppNavigator() {
                 }
             )
         }
+
         // ➡️ User Setup
         composable("user_setup") {
             UserSetupScreen(
+                userInfoViewModel=userInfoViewModel, //pass viewmodel to save user info
                 onSetUpComplete = {
-                    userSetUpFinished = true
+
                     navController.navigate("main_app") {
                         popUpTo("user_setup") { inclusive = true }
                     }
@@ -99,7 +119,10 @@ fun AppNavigator() {
         composable("forgot_pin") {
             ForgotPinScreen(
                 onNewPinSaved = { newPin ->
-                    savedPin = newPin
+                    // Reuse existing saveUserPin function
+                    userInfoViewModel.saveUserPin(newPin.toInt())
+
+                    // Navigate back to Enter PIN
                     navController.navigate("enter_pin") {
                         popUpTo("forgot_pin") { inclusive = true }
                     }
@@ -134,12 +157,8 @@ fun NavHostContainer(
     padding: PaddingValues
 ) {
     val vm: CalendarViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-
     val symptomViewModel: SymptomViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-
     val mealLogs = remember { mutableStateListOf<Map<String, String>>() }
-
-
     NavHost(
         navController = navController,
         startDestination = "add",
