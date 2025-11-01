@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
 @Composable
-fun ForgotPinScreen(navController: NavController) {
+fun ForgotPinScreen( onNewPinSaved: (String) -> Unit) {
     var newPin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -105,10 +105,7 @@ fun ForgotPinScreen(navController: NavController) {
                         }
                         else -> {
                             errorMessage = ""
-                            // Go back to EnterPinScreen
-                            navController.navigate("enter_pin") {
-                                popUpTo("forgot_pin") { inclusive = true }
-                            }
+                            onNewPinSaved(newPin)
                         }
                     }
                 },
