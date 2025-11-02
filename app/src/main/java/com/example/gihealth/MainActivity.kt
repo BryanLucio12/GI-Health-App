@@ -18,6 +18,7 @@ import com.example.gihealth.ui.onboarding.EnterPinScreen
 import com.example.gihealth.ui.onboarding.ForgotPinScreen
 import com.example.gihealth.ui.onboarding.UserSetupScreen
 import com.example.gihealth.ui.screens.*
+import com.example.gihealth.ui.logroutes.LogFoodRoute
 import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +28,8 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.gihealth.data.UserInfoViewModel
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.Composable
+import com.example.gihealth.ui.viewmodel.FoodViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -181,8 +184,11 @@ fun NavHostContainer(
             JournalScreen()
         }
         composable("logFood") {
+            val vm: FoodViewModel = viewModel()
+
             LogFoodScreen(
                 onSave = { food, time, meal, ingredients, date ->
+                    // 1) keep your in-memory list
                     mealLogs.add(
                         mapOf(
                             "food" to food,
@@ -192,6 +198,9 @@ fun NavHostContainer(
                             "date" to date
                         )
                     )
+                    // 2) also insert into Room
+                    vm.insertFood(food)
+
                     navController.popBackStack()
                 },
                 onBackPressed = { navController.popBackStack() }
