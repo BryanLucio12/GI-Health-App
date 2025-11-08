@@ -11,15 +11,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gihealth.data.JournalViewModel
 import com.example.gihealth.ui.theme.GIHealthTheme
+import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun JournalScreen() {
+fun JournalScreen(){
+    val context = LocalContext.current
+    //initialize journal view model
+    val journalViewModel: JournalViewModel = viewModel(
+        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as android.app.Application
+        )
+    )
+
     var journalText by remember { mutableStateOf("") }
-    var journalEntries by remember { mutableStateOf(listOf<JournalEntry>()) }
+    val journalEntries by journalViewModel.journalEntries.collectAsState()
 
     Column(
         modifier = Modifier
@@ -67,10 +78,7 @@ fun JournalScreen() {
         Button(
             onClick = {
                 if (journalText.isNotBlank()) {
-                    val formatter = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
-                    val date = formatter.format(Date())
-                    val newEntry = JournalEntry(journalText.trim(), date)
-                    journalEntries = listOf(newEntry) + journalEntries
+                    journalViewModel.addJournalEntry(journalText.trim())
                     journalText = ""
                 }
             },
@@ -120,7 +128,7 @@ fun JournalScreen() {
                                 .padding(top = 20.dp)
                         ) {
                             Text(
-                                text = entry.text,
+                                text = entry.entry,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }

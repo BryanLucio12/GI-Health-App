@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.example.gihealth.data.UserInfoViewModel
+import com.example.gihealth.data.JournalViewModel
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.Composable
 import com.example.gihealth.ui.viewmodel.FoodViewModel
@@ -54,7 +55,9 @@ fun AppNavigator() {
         androidx.lifecycle.viewmodel.compose.viewModel(
             factory = ViewModelProvider.AndroidViewModelFactory(context.applicationContext as android.app.Application)
         )
-    //look at userinfo livedata to know if account already set up
+
+
+        //look at userinfo livedata to know if account already set up
     val userInfo by userInfoViewModel.userInfo.observeAsState()
     //if pin already created
     val hasPin = userInfo?.pin?.let { it != 0 } ?: false
