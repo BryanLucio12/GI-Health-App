@@ -1,3 +1,4 @@
+// FoodDatabase.kt
 package com.example.gihealth.data
 
 import android.content.Context
@@ -5,8 +6,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-
-@Database(entities = [FoodEntity::class], version = 1)
+@Database(entities = [FoodEntity::class], version = 3)
 abstract class FoodDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
 
@@ -14,14 +14,16 @@ abstract class FoodDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: FoodDatabase? = null
 
-
         fun getDatabase(context: Context): FoodDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     FoodDatabase::class.java,
-                    "food_database"              // database file name
-                ).build()
+                    "food_database"
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+
                 INSTANCE = instance
                 instance
             }
