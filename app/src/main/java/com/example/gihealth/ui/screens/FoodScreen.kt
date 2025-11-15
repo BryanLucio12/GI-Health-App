@@ -23,52 +23,49 @@ fun FoodScreen(
 ) {
     val mealTypes = listOf("Breakfast", "Lunch", "Dinner", "Snack")
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Title
-        Text(
-            text = "Food",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 20.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // "Add Food" Button
-        Button(
-            onClick = { navController.navigate("logFood") },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58))
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Add Food",
-                tint = Color.White
+        item {
+            Text(
+                text = "Food",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Add Food", color = Color.White)
+            Text(
+                text = "Track your meals and ingredients",
+                fontSize = 16.sp,
+                color = Color.DarkGray
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { navController.navigate("logFood") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
+                shape = RoundedCornerShape(25.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(45.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Food",
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "Add Food", color = Color.White, fontSize = 16.sp)
+            }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Scrollable list of meal cards
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            items(mealTypes) { type ->
-                MealCard(
-                    label = type,
-                    logs = mealLogs.filter { it["meal"] == type }
-                )
-            }
+        items(mealTypes) { type ->
+            MealCard(
+                label = type,
+                logs = mealLogs.filter { it["meal"] == type }
+            )
         }
     }
 }
@@ -79,16 +76,16 @@ fun MealCard(label: String, logs: List<Map<String, String>>) {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
                 text = label,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
+                fontSize = 18.sp
             )
 
             if (logs.isEmpty()) {
@@ -106,7 +103,7 @@ fun MealCard(label: String, logs: List<Map<String, String>>) {
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "${log["time"]} — ${log["ingredients"]}",
+                            text = "${log["time"]}",
                             fontSize = 13.sp,
                             color = Color.Gray
                         )

@@ -1,3 +1,4 @@
+// FoodDao.kt
 package com.example.gihealth.data
 
 import androidx.room.Dao
@@ -13,6 +14,9 @@ interface FoodDao {
 
     @Query("SELECT * FROM food_table ORDER BY id ASC")
     suspend fun getAllFoods(): List<FoodEntity>
+
+    @Query("SELECT * FROM food_table WHERE date = :date ORDER BY id ASC")
+    suspend fun getFoodsForDate(date: String): List<FoodEntity>
 
     @Delete
     suspend fun delete(food: FoodEntity)

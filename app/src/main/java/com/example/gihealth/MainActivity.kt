@@ -157,6 +157,7 @@ fun MainNavHost() {
     }
 }
 
+// In NavHostContainer(...)
 @Composable
 fun NavHostContainer(
     navController: NavHostController,
@@ -164,56 +165,69 @@ fun NavHostContainer(
 ) {
     val vm: CalendarViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val symptomViewModel: SymptomViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-    val mealLogs = remember { mutableStateListOf<Map<String, String>>() }
+    val foodVm: FoodViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+    val todayFoods by foodVm.todayFoods.observeAsState(emptyList())
+
     NavHost(
         navController = navController,
         startDestination = "add",
         modifier = Modifier.padding(padding)
-    )
-    {
+    ) {
         composable("food") {
+
+            val mealLogs = todayFoods.map { entity ->
+                mapOf(
+                    "food" to entity.name,
+                    "time" to entity.time,
+                    "meal" to entity.meal,
+                    "ingredients" to "", // empty for now due to it being pulled from ingredients database
+                    "date" to entity.date
+                )
+            }
+
             FoodScreen(
                 navController = navController,
                 mealLogs = mealLogs
             )
         }
-        composable("symptoms") {
-            SymptomScreen(navController = navController, vm = symptomViewModel)
-        }
-        composable("add")      {
-            AddNewScreen(navController)
-        }
-        composable("journal")  {
-            JournalScreen()
-        }
-        composable("logFood") {
-            val vm: FoodViewModel = viewModel()
 
+        composable("logFood") {
             LogFoodScreen(
                 onSave = { food, time, meal, ingredients, date ->
-                    // 1) keep your in-memory list
-                    mealLogs.add(
-                        mapOf(
-                            "food" to food,
-                            "time" to time,
-                            "meal" to meal,
-                            "ingredients" to ingredients,
-                            "date" to date
-                        )
+
+                    foodVm.insertFood(
+                        name = food,
+                        time = time,
+                        meal = meal,
+                        date = date
                     )
-                    // 2) also insert into Room
-                    vm.insertFood(food)
 
                     navController.popBackStack()
                 },
                 onBackPressed = { navController.popBackStack() }
             )
         }
+
+        composable("symptoms") {
+            SymptomScreen(navController = navController, vm = symptomViewModel)
+        }
+
+        composable("add") {
+            AddNewScreen(navController)
+        }
+
+        composable("journal") {
+            JournalScreen()
+        }
+
         composable("logSymptom") {
-            LogSymptomScreen(navController = navController,
+            LogSymptomScreen(
+                navController = navController,
                 symptomViewModel = symptomViewModel
             )
         }
+
         composable("logWeight") {
             LogWeightScreen()
         }
@@ -225,11 +239,6 @@ fun NavHostContainer(
             )
         }
 
-
-        composable("logWeight") {
-            LogWeightScreen()
-        }
-
         composable("calendar") {
             FullCalendarScreen(
                 onClose = { navController.popBackStack() },
@@ -238,6 +247,8 @@ fun NavHostContainer(
         }
     }
 }
+
+
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
