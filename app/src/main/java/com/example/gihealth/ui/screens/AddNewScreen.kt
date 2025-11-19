@@ -76,7 +76,7 @@ fun AddNewScreen(navController: NavHostController) {
                     onClick = { navController.navigate("journal") }
                 )
                 AddNewCard(
-                    title = "Log Weight",
+                    title = "Log Wellbeing",
                     icon = Icons.Default.MonitorWeight,
                     backgroundColor = cardColor,
                     onClick = { navController.navigate("logWeight") }
