@@ -229,7 +229,7 @@ fun NavHostContainer(
         }
 
         composable("logWeight") {
-            LogWeightScreen()
+            LogWeightScreen(navController)
         }
 
         composable("analytics") {
