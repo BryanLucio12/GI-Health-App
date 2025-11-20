@@ -10,5 +10,6 @@ data class FoodEntity(
     val name: String,
     val time: String,
     val meal: String,
-    val date: String
+    val date: String,
+    val ingredients: String = ""   // 👈 NEW
 )

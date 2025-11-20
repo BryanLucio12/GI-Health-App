@@ -163,9 +163,9 @@ fun NavHostContainer(
     navController: NavHostController,
     padding: PaddingValues
 ) {
-    val vm: CalendarViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-    val symptomViewModel: SymptomViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-    val foodVm: FoodViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val vm: CalendarViewModel = viewModel()
+    val symptomViewModel: SymptomViewModel = viewModel()
+    val foodVm: FoodViewModel = viewModel()
 
     val todayFoods by foodVm.todayFoods.observeAsState(emptyList())
 
@@ -181,10 +181,11 @@ fun NavHostContainer(
                     "food" to entity.name,
                     "time" to entity.time,
                     "meal" to entity.meal,
-                    "ingredients" to "", // empty for now due to it being pulled from ingredients database
+                    "ingredients" to entity.ingredients,
                     "date" to entity.date
                 )
             }
+
 
             FoodScreen(
                 navController = navController,
@@ -194,20 +195,21 @@ fun NavHostContainer(
 
         composable("logFood") {
             LogFoodScreen(
+                foodViewModel = foodVm,
                 onSave = { food, time, meal, ingredients, date ->
-
                     foodVm.insertFood(
                         name = food,
                         time = time,
                         meal = meal,
+                        ingredients = ingredients,
                         date = date
                     )
-
                     navController.popBackStack()
                 },
                 onBackPressed = { navController.popBackStack() }
             )
         }
+
 
         composable("symptoms") {
             SymptomScreen(navController = navController, vm = symptomViewModel)

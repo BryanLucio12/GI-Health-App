@@ -103,10 +103,19 @@ fun MealCard(label: String, logs: List<Map<String, String>>) {
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "${log["time"]}",
+                            text = log["time"] ?: "",
                             fontSize = 13.sp,
                             color = Color.Gray
                         )
+
+                        val ing = log["ingredients"].orEmpty()
+                        if (ing.isNotBlank()) {
+                            Text(
+                                text = ing,
+                                fontSize = 12.sp,
+                                color = Color.DarkGray
+                            )
+                        }
                     }
                 }
             }
