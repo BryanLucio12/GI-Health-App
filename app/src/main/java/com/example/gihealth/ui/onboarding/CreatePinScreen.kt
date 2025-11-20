@@ -120,6 +120,7 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
 
             //Confirm Pin
             Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
                 onClick = {
                     when {
                         //Checks if pin is 4 digits long

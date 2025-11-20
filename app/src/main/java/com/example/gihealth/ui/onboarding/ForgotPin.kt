@@ -95,6 +95,7 @@ fun ForgotPinScreen( onNewPinSaved: (String) -> Unit) {
 
             // Reset button
             Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
                 onClick = {
                     when {
                         newPin.length != 4 || confirmPin.length != 4 -> {
@@ -111,8 +112,7 @@ fun ForgotPinScreen( onNewPinSaved: (String) -> Unit) {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5))
+                    .height(52.dp)
             ) {
                 Text("Save New PIN", color = Color.White, fontSize = 18.sp)
             }

@@ -82,6 +82,7 @@ fun EnterPinScreen(navController: NavController, savedPin: String, loginSuccess:
 
             //Action when they press continue
             Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
                 onClick = {
                     when {
                         pin.length != 4 ->
@@ -112,10 +113,8 @@ fun EnterPinScreen(navController: NavController, savedPin: String, loginSuccess:
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            TextButton(onClick = { navController.navigate("forgot_pin") }) {
-                Text("Forgot PIN?",
-                    color = Color.Blue
-                )
+            TextButton(onClick = { navController.navigate("questionnaire_verify") }) {
+                Text("Forgot PIN?", color = Color.Blue)
             }
         }
     }
