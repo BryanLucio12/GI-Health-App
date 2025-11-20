@@ -31,6 +31,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.Composable
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gihealth.ui.onboarding.QuestionnaireScreen
+import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +68,7 @@ fun AppNavigator() {
     //determine the first screen shown based on pin and setup status
     val savedPin = userInfo?.pin?.toString() ?: ""
     val startDestination = when {
-        !hasPin -> "create_pin"
+        !hasPin -> "create_pin?reset=false"
         !hasSetupCompleted -> "user_setup"
         else -> "enter_pin"
     }
@@ -76,13 +78,34 @@ fun AppNavigator() {
 
 
         // ➡️ Create PIN
-        composable("create_pin") {
+        composable("create_pin?reset={reset}") { backStackEntry ->
+            val reset = backStackEntry.arguments?.getString("reset") == "true"
+
             CreatePinScreen(
                 navController = navController,
                 onPinCreated = {
 
+                    if (reset) {
+                        // reset the pin
+                        navController.navigate("enter_pin") {
+                            popUpTo("create_pin") { inclusive = true }
+                        }
+                    } else {
+                        //Questions asked for first time user
+                        navController.navigate("questionnaire") {
+                            popUpTo("create_pin") { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable("questionnaire") {
+            QuestionnaireScreen(
+                navController = navController,
+                onComplete = {
                     navController.navigate("user_setup") {
-                        popUpTo("create_pin") { inclusive = true }
+                        popUpTo("questionnaire") { inclusive = true }
                     }
                 }
             )
@@ -131,6 +154,17 @@ fun AppNavigator() {
                     // Navigate back to Enter PIN
                     navController.navigate("enter_pin") {
                         popUpTo("forgot_pin") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("questionnaire_verify") {
+            QuestionnaireVerifyScreen(
+                navController = navController,
+                onVerified = {
+                    navController.navigate("forgot_pin") {
+                        popUpTo("questionnaire_verify") { inclusive = true }
                     }
                 }
             )

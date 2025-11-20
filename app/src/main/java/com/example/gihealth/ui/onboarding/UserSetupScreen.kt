@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -230,6 +231,7 @@ fun UserSetupScreen(userInfoViewModel: UserInfoViewModel, onSetUpComplete: () ->
 
             // Continue button
             Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
                 onClick = {
                     //Checks if name or weight is empty
                     if (name.isBlank() || weight.isBlank()) {
@@ -254,7 +256,6 @@ fun UserSetupScreen(userInfoViewModel: UserInfoViewModel, onSetUpComplete: () ->
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp)
             ){
                 Text("Continue", color = Color.White, fontSize = 18.sp)
             }

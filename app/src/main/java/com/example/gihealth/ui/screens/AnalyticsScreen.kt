@@ -412,7 +412,7 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
                 val startY = chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
                 val endX = (daysToShow.indexOf(validDates[i])) * spacingX
                 val endY = chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
-                drawLine(Color(0xFF4285F4), Offset(startX, startY), Offset(endX, endY), 5f, StrokeCap.Round)
+                drawLine(Color(0xFF0F9D58), Offset(startX, startY), Offset(endX, endY), 5f, StrokeCap.Round)
             }
         }
 
@@ -423,7 +423,7 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             val value = data[date]
             if (value != null && date <= today) {
                 val y = chartHeight - ((value - minY) / rangeY * chartHeight)
-                drawCircle(color = Color(0xFF4285F4), radius = 7f, center = Offset(x, y))
+                drawCircle(color = Color(0xFF0F9D58), radius = 7f, center = Offset(x, y))
             }
             if (i % labelInterval == 0 || i == daysToShow.lastIndex) {
                 drawContext.canvas.nativeCanvas.drawText(
