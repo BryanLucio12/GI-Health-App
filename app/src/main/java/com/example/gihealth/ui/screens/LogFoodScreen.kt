@@ -12,19 +12,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.gihealth.ui.theme.GIHealthTheme
+import com.example.gihealth.ui.viewmodel.FoodViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun LogFoodScreen(
+    foodViewModel: FoodViewModel,
     onSave: ((food: String, time: String, meal: String, ingredients: String, date: String) -> Unit)? = null,
     onBackPressed: (() -> Unit)? = null
 ) {
@@ -32,29 +32,19 @@ fun LogFoodScreen(
 
     var food by remember { mutableStateOf("") }
     var meal by remember { mutableStateOf("Lunch") }
-    var ingredients by remember { mutableStateOf("") }
+    var ingredients by remember { mutableStateOf("") }   // auto-filled only
 
-    //Time handling
+    // Observe search results from catalog
+    val searchResults by foodViewModel.searchResults.collectAsState()
+    var foodDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Time handling
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
     val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
 
     // Meal dropdown options
     val mealOptions = listOf("Breakfast", "Lunch", "Dinner", "Snack")
     var mealExpanded by remember { mutableStateOf(false) }
-
-    // Ingredient
-    val allIngredients = listOf("Turkey", "Lettuce", "Tomato", "Whole wheat")
-    var ingredientsExpanded by remember { mutableStateOf(false) }
-    var hasFocus by remember { mutableStateOf(false) }
-
-    val filteredIngredients = remember(ingredients, allIngredients) {
-        if (ingredients.isBlank())
-            emptyList()
-        else allIngredients.filter { it.contains(
-            ingredients,
-            ignoreCase = true
-        ) }
-    }
 
     // Date
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
@@ -87,7 +77,7 @@ fun LogFoodScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            //Date selector
+            // Date selector
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -116,21 +106,52 @@ fun LogFoodScreen(
                 }
             }
 
-            // Food input
-            OutlinedTextField(
-                value = food,
-                onValueChange = { food = it },
-                label = { Text("What did you eat?") },
-                placeholder = { Text("e.g., Turkey sandwich") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Food input with dropdown suggestions (from branded catalog)
+            ExposedDropdownMenuBox(
+                expanded = foodDropdownExpanded && searchResults.isNotEmpty(),
+                onExpandedChange = { expanded ->
+                    foodDropdownExpanded = expanded && searchResults.isNotEmpty()
+                }
+            ) {
+                OutlinedTextField(
+                    value = food,
+                    onValueChange = {
+                        food = it
+                        ingredients = "" // clear any previous auto ingredients if user edits
+                        foodViewModel.searchFoods(it)
+                        foodDropdownExpanded = it.isNotBlank()
+                    },
+                    label = { Text("What did you eat?") },
+                    placeholder = { Text("e.g., Turkey sandwich") },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = foodDropdownExpanded && searchResults.isNotEmpty(),
+                    onDismissRequest = { foodDropdownExpanded = false }
+                ) {
+                    searchResults.forEach { item ->
+                        DropdownMenuItem(
+                            text = { Text(item.name) },
+                            onClick = {
+                                // Auto-fill both the food name and ingredients from catalog
+                                food = item.name
+                                ingredients = item.ingredients
+                                foodDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             // Time + Meal Row
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                //Time Picker
+                // Time Picker
                 Box(modifier = Modifier.weight(1f)) {
                     OutlinedTextField(
                         value = selectedTime.format(timeFormatter),
@@ -161,7 +182,7 @@ fun LogFoodScreen(
                     )
                 }
 
-                //Meal Dropdown
+                // Meal Dropdown
                 ExposedDropdownMenuBox(
                     expanded = mealExpanded,
                     onExpandedChange = { mealExpanded = !mealExpanded },
@@ -197,54 +218,27 @@ fun LogFoodScreen(
                 }
             }
 
-            //Ingredients dropdown
-            ExposedDropdownMenuBox(
-                expanded = ingredientsExpanded && filteredIngredients.isNotEmpty(),
-                onExpandedChange = { want -> ingredientsExpanded = want && filteredIngredients.isNotEmpty() }
-            ) {
-                OutlinedTextField(
-                    value = ingredients,
-                    onValueChange = {
-                        ingredients = it
-                        ingredientsExpanded = hasFocus && it.isNotBlank() &&
-                                allIngredients.any { i -> i.contains(it, ignoreCase = true) }
-                    },
-                    label = { Text("Ingredients") },
-                    placeholder = { Text("e.g., turkey") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                        .fillMaxWidth()
-                        .onFocusChanged {
-                            hasFocus = it.isFocused
-                            if (hasFocus) {
-                                ingredientsExpanded = ingredients.isNotBlank() && filteredIngredients.isNotEmpty()
-                            }
-                        },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = ingredientsExpanded && filteredIngredients.isNotEmpty()
-                        )
-                    }
-                )
-
-                ExposedDropdownMenu(
-                    expanded = ingredientsExpanded && filteredIngredients.isNotEmpty(),
-                    onDismissRequest = { ingredientsExpanded = false }
+            // Read-only view of auto-filled ingredients (if available)
+            if (ingredients.isNotBlank()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    filteredIngredients.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                ingredients = option
-                                ingredientsExpanded = false
-                            }
-                        )
-                    }
+                    Text(
+                        text = "Ingredients (auto-filled):",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = ingredients,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
                 }
             }
 
-            //Save Button
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Save Button
             Button(
                 onClick = {
                     onSave?.invoke(
@@ -261,13 +255,5 @@ fun LogFoodScreen(
                 Text("Save Log")
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun LogFoodScreenPreview() {
-    GIHealthTheme {
-        LogFoodScreen()
     }
 }
