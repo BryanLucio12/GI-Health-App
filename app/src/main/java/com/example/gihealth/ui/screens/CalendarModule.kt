@@ -1,17 +1,31 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.gihealth.ui.screens
 
-
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,305 +36,129 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-// ---------- State ----------
-enum class DayStatus { GOOD, BAD }
+// ---------------------------------------------------------
+// Simple VM + data model
+// ---------------------------------------------------------
 
-class CalendarViewModel : ViewModel() {
-    val moodMap = mutableStateMapOf<LocalDate, DayStatus>()
-    var lastClicked by mutableStateOf<Pair<LocalDate, DayStatus>?>(null)
+class CalendarViewModel : ViewModel()
 
-    fun setStatus(date: LocalDate, status: DayStatus) {
-        moodMap[date] = status
-        lastClicked = date to status
-    }
-    fun clear(date: LocalDate) {
-        moodMap.remove(date)
-        if (lastClicked?.first == date) lastClicked = null
-    }
-}
+/**
+ * Per-day food data.
+ * Hook this up to your Room DB / repository later.
+ */
+data class FoodDay(
+    val breakfast: String? = null,
+    val lunch: String? = null,
+    val dinner: String? = null
+)
 
-// ---------- Widget (used on Analytics screen) ----------
+// ---------------------------------------------------------
+// Compact calendar widget used on Analytics screen
+// ---------------------------------------------------------
+
 @Composable
 fun MoodCalendarWidget(
     vm: CalendarViewModel,
     onOpen: () -> Unit
 ) {
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    val today = LocalDate.now()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(380.dp)
-            .clickable { onOpen() }, // open full calendar
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .clickable { onOpen() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-        var paintMode by remember { mutableStateOf(DayStatus.GOOD) }
-
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             // Month header
             Row(
-                Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) { Text("◀") }
                 Text(
-                    text = currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) +
-                            " " + currentMonth.year,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    text = "◀",
+                    modifier = Modifier
+                        .clickable { currentMonth = currentMonth.minusMonths(1) },
+                    fontSize = 20.sp
                 )
-                TextButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) { Text("▶") }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // Mode chips + Clear
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Good
-                FilterChip(
-                    selected = paintMode == DayStatus.GOOD,
-                    onClick = { paintMode = DayStatus.GOOD },
-                    label = { Text("Good") },
-                    leadingIcon = {
-                        Box(
-                            Modifier
-                                .size(12.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFF2ECC71))
-                        )
-                    }
-                )
-                // Bad
-                FilterChip(
-                    selected = paintMode == DayStatus.BAD,
-                    onClick = { paintMode = DayStatus.BAD },
-                    label = { Text("Bad") },
-                    leadingIcon = {
-                        Box(
-                            Modifier
-                                .size(12.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFFE74C3C))
-                        )
-                    }
-                )
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = {
-                    val start = currentMonth.atDay(1)
-                    val end = currentMonth.atEndOfMonth()
-                    vm.moodMap.keys.filter { it in start..end }.toList().forEach { vm.clear(it) }
-                }) { Text("Clear") }
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            // Weekdays
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("Sun","Mon","Tue","Wed","Thu","Fri","Sat").forEach {
-                    Text(
-                        it,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            // 7x6 grid filling remaining card height (no vertical scroll)
-            val cells = remember(currentMonth) { daysOfMonthGrid(currentMonth) }
-            Box(Modifier.fillMaxWidth().weight(1f)) {
-                BoxWithConstraints(Modifier.fillMaxSize()) {
-                    val maxW = this.maxWidth
-                    val maxH = this.maxHeight
-
-                    val cols = 7; val rows = 6
-                    val h = 6.dp; val v = 6.dp
-                    val cellW = (maxW - h * (cols - 1)) / cols
-                    val cellH = (maxH - v * (rows - 1)) / rows
-                    val cellSize = minOf(cellW, cellH)
-
-                    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(v)) {
-                        repeat(rows) { r ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(h)) {
-                                repeat(cols) { c ->
-                                    val i = r * cols + c
-                                    val day = cells.getOrNull(i)
-                                    if (day == null) {
-                                        Box(Modifier.size(cellSize))
-                                    } else {
-                                        val status = vm.moodMap[day]
-                                        DayCell(
-                                            date = day,
-                                            status = status,
-                                            onClick = { vm.setStatus(day, paintMode) },
-                                            onLongPressClear = { vm.clear(day) },
-                                            modifier = Modifier.size(cellSize)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Show last selection (if any)
-            vm.lastClicked?.let { (date, status) ->
-                val label = if (status == DayStatus.GOOD) "Good" else "Bad"
-                val color = if (status == DayStatus.GOOD) Color(0xFF2ECC71) else Color(0xFFE74C3C)
-                val d = date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
-                Spacer(Modifier.height(8.dp))
-                Text("Selected: $d — $label", color = color, fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
-}
-
-// ---------- Full-screen calendar (with X to close) ----------
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FullCalendarScreen(
-    onClose: () -> Unit,
-    vm: CalendarViewModel
-) {
-    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-    var paintMode by remember { mutableStateOf(DayStatus.GOOD) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Calendar") },
-                navigationIcon = {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = "Close")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) { Text("◀") }
                 Text(
-                    text = currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault()) +
-                            " " + currentMonth.year,
-                    style = MaterialTheme.typography.titleLarge,
+                    text = monthTitle(currentMonth),
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                TextButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) { Text("▶") }
+                Text(
+                    text = "▶",
+                    modifier = Modifier
+                        .clickable { currentMonth = currentMonth.plusMonths(1) },
+                    fontSize = 20.sp
+                )
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
+            // Weekday labels
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                FilterChip(
-                    selected = paintMode == DayStatus.GOOD, onClick = { paintMode = DayStatus.GOOD },
-                    label = { Text("Good") },
-                    leadingIcon = {
-                        Box(
-                            Modifier
-                                .size(12.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFF2ECC71))
-                        )
-                    }
-                )
-                FilterChip(
-                    selected = paintMode == DayStatus.BAD, onClick = { paintMode = DayStatus.BAD },
-                    label = { Text("Bad") },
-                    leadingIcon = {
-                        Box(
-                            Modifier
-                                .size(12.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFFE74C3C))
-                        )
-                    }
-                )
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = {
-                    val start = currentMonth.atDay(1)
-                    val end = currentMonth.atEndOfMonth()
-                    vm.moodMap.keys.filter { it in start..end }.toList().forEach { vm.clear(it) }
-                }) { Text("Clear month") }
-            }
-
-            Spacer(Modifier.height(6.dp))
-
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("Sun","Mon","Tue","Wed","Thu","Fri","Sat").forEach {
+                listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat").forEach {
                     Text(
-                        it,
+                        text = it,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
             }
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
+            // Calendar grid
             val cells = remember(currentMonth) { daysOfMonthGrid(currentMonth) }
-            Box(Modifier.fillMaxWidth().weight(1f)) {
-                BoxWithConstraints(Modifier.fillMaxSize()) {
-                    val maxW = this.maxWidth
-                    val maxH = this.maxHeight
 
-                    val cols = 7; val rows = 6
-                    val h = 6.dp; val v = 6.dp
-                    val cellW = (maxW - h * (cols - 1)) / cols
-                    val cellH = (maxH - v * (rows - 1)) / rows
-                    val cellSize = minOf(cellW, cellH)
-
-                    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(v)) {
-                        repeat(rows) { r ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(h)) {
-                                repeat(cols) { c ->
-                                    val i = r * cols + c
-                                    val day = cells.getOrNull(i)
-                                    if (day == null) {
-                                        Box(Modifier.size(cellSize))
-                                    } else {
-                                        val status = vm.moodMap[day]
-                                        DayCell(
-                                            date = day,
-                                            status = status,
-                                            onClick = { vm.setStatus(day, paintMode) },
-                                            onLongPressClear = { vm.clear(day) },
-                                            modifier = Modifier.size(cellSize)
-                                        )
-                                    }
-                                }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                cells.chunked(7).forEach { week ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        week.forEach { date ->
+                            if (date == null) {
+                                // empty cell, but still takes 1/7 of the width
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                )
+                            } else {
+                                DayCell(
+                                    date = date,
+                                    isSelected = date == today,
+                                    onClick = { onOpen() },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(vertical = 2.dp)
+                                )
                             }
                         }
                     }
@@ -330,49 +168,337 @@ fun FullCalendarScreen(
     }
 }
 
-// ---------- Shared visuals ----------
-@OptIn(ExperimentalFoundationApi::class)
+// ---------------------------------------------------------
+// Full calendar screen
+// ---------------------------------------------------------
+
+@Composable
+fun FullCalendarScreen(
+    onClose: () -> Unit,
+    vm: CalendarViewModel,
+    // You can plug your real data here later:
+    getFoodForDate: (LocalDate) -> FoodDay? = { null },
+    getJournalForDate: (LocalDate) -> String? = { null },
+    getSymptomsForDate: (LocalDate) -> String? = { null }
+) {
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+
+    val today = LocalDate.now()
+    val headerFormatter =
+        DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.getDefault())
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Calendar") },
+                navigationIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Filled.Close, contentDescription = "Close")
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+
+            // Month + calendar section
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    shape = RoundedCornerShape(24.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        // Month header
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "◀",
+                                modifier = Modifier
+                                    .clickable {
+                                        currentMonth = currentMonth.minusMonths(1)
+                                    },
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = monthTitle(currentMonth),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "▶",
+                                modifier = Modifier
+                                    .clickable {
+                                        currentMonth = currentMonth.plusMonths(1)
+                                    },
+                                fontSize = 20.sp
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Weekday labels
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat").forEach {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // Calendar grid
+                        val cells = remember(currentMonth) { daysOfMonthGrid(currentMonth) }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            cells.chunked(7).forEach { week ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    week.forEach { date ->
+                                        if (date == null) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                            )
+                                        } else {
+                                            DayCell(
+                                                date = date,
+                                                isSelected = date == selectedDate,
+                                                onClick = { selectedDate = date },
+                                                modifier = Modifier.size(40.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom details – scrolls with the rest of the screen
+            item {
+                CalendarDayDetailsSection(
+                    selectedDate = selectedDate,
+                    headerText = selectedDate.format(headerFormatter).uppercase(),
+                    foodSummary = remember(selectedDate) {
+                        // Build multi-line text from FoodDay
+                        getFoodForDate(selectedDate)?.let { food ->
+                            buildString {
+                                food.breakfast?.takeIf { it.isNotBlank() }?.let {
+                                    appendLine("Breakfast: $it")
+                                }
+                                food.lunch?.takeIf { it.isNotBlank() }?.let {
+                                    appendLine("Lunch: $it")
+                                }
+                                food.dinner?.takeIf { it.isNotBlank() }?.let {
+                                    append("Dinner: $it")
+                                }
+                            }.ifBlank { null }  // null = treated as "no food"
+                        }
+                    },
+                    journalSummary = getJournalForDate(selectedDate),
+                    symptomSummary = getSymptomsForDate(selectedDate)
+                )
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+        }
+    }
+}
+
+// ---------------------------------------------------------
+// Shared pieces
+// ---------------------------------------------------------
+
 @Composable
 private fun DayCell(
     date: LocalDate,
-    status: DayStatus?,
+    isSelected: Boolean,
     onClick: () -> Unit,
-    onLongPressClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bg = when (status) {
-        DayStatus.GOOD -> Color(0xFF2ECC71)
-        DayStatus.BAD  -> Color(0xFFE74C3C)
-        null           -> Color.Transparent
+    val outlineColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
     }
-    val borderColor = if (status == null) Color(0x33000000) else Color.Transparent
+
+    val textColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-            .background(bg)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongPressClear
+            .aspectRatio(1f)
+            .clip(CircleShape)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = outlineColor,
+                shape = CircleShape
             )
-            .padding(4.dp),
-        contentAlignment = Alignment.TopEnd
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = date.dayOfMonth.toString(),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (status == null) Color.Unspecified else Color.White
+            fontSize = 14.sp,
+            color = textColor
         )
     }
 }
 
+private fun monthTitle(month: YearMonth): String =
+    month.month.getDisplayName(TextStyle.FULL, Locale.getDefault())
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() } +
+            " " + month.year
+
 private fun daysOfMonthGrid(month: YearMonth): List<LocalDate?> {
     val first = month.atDay(1)
-    val days = month.lengthOfMonth()
-    val offset = first.dayOfWeek.value % 7 // Sunday=0
-    return MutableList<LocalDate?>(42) { null }.apply {
-        for (i in 0 until days) this[offset + i] = first.plusDays(i.toLong())
+    val daysInMonth = month.lengthOfMonth()
+
+    // java.time: Monday = 1 … Sunday = 7
+    val offset = first.dayOfWeek.value % 7 // Sunday(7) -> 0
+
+    val cells = MutableList<LocalDate?>(42) { null }
+    for (i in 0 until daysInMonth) {
+        cells[offset + i] = first.plusDays(i.toLong())
+    }
+    return cells
+}
+
+// ---------------------------------------------------------
+// Detail section (Food / Journal / Symptoms)
+// ---------------------------------------------------------
+
+@Composable
+private fun CalendarDayDetailsSection(
+    selectedDate: LocalDate,
+    headerText: String,
+    foodSummary: String?,
+    journalSummary: String?,
+    symptomSummary: String?
+) {
+    var expanded by remember { mutableStateOf(true) }
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+    ) {
+        // Header with expand / collapse icon
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = headerText,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Icon(
+                imageVector = if (expanded) Icons.Default.ArrowDropDown else Icons.Default.ArrowDropUp,
+                contentDescription = if (expanded) "Collapse" else "Expand"
+            )
+        }
+
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DayDetailCard(
+                    title = "Food",
+                    text = foodSummary,
+                    emptyText = "No food entry"
+                )
+
+                DayDetailCard(
+                    title = "Journal",
+                    text = journalSummary,
+                    emptyText = "No journal entry"
+                )
+
+                DayDetailCard(
+                    title = "Symptoms",
+                    text = symptomSummary,
+                    emptyText = "No symptoms logged"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayDetailCard(
+    title: String,
+    text: String?,
+    emptyText: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = text ?: emptyText,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
