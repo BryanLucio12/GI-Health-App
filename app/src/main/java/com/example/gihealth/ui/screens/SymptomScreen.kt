@@ -17,49 +17,67 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.gihealth.data.SymptomEntity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import com.example.gihealth.data.SymptomDatabase
+import androidx.compose.foundation.lazy.items
 
 
-class SymptomViewModel : ViewModel() {
 
-    private val defaultSymptoms = listOf("Bloating", "Cramps", "Fatigue", "Nausea", "Headache")
 
-    // List of symptom names
-    var symptoms = mutableStateListOf<String>()
-        private set
+class SymptomViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Logged symptom data
-    var loggedSymptoms = mutableStateMapOf<String, SymptomLogEntry>()
-        private set
+    //get dao from database to access the symptoms
+    private val symptomDao = SymptomDatabase.getDatabase(application).symptomDao()
+
+    private val _symptoms = MutableStateFlow<List<SymptomEntity>>(emptyList())
+    val symptoms: StateFlow<List<SymptomEntity>> = _symptoms
 
     init {
-        symptoms.addAll(defaultSymptoms)
+        observeSymptoms()
     }
 
-    fun addSymptom(name: String) {
-        if (name.isNotBlank() && !symptoms.contains(name.trim())) {
-            symptoms.add(name.trim())
+    //observe all symtoms in db and update stateflow
+    private fun observeSymptoms() {
+        viewModelScope.launch {
+            symptomDao.getAllSymptoms().collectLatest { list ->
+                _symptoms.value = list
+            }
         }
     }
 
-    fun logSymptom(name: String, severity: Int, note: String) {
-        val today = LocalDate.now()
-        val dateString = today.format(DateTimeFormatter.ofPattern("MMM d"))
-        loggedSymptoms[name] = SymptomLogEntry(severity, note, dateString)
+    //add new symptom
+    fun addSymptom(name: String, severity: Int, timeLength: Int) {
+        val entity = SymptomEntity(
+            name = name,
+            severity = severity,
+            timeLength = timeLength,
+            timestamp = System.currentTimeMillis()
+        )
+        viewModelScope.launch { symptomDao.insert(entity) }
     }
 
-    data class SymptomLogEntry(
-        val severity: Int,
-        val note: String,
-        val date: String
-    )
+    fun deleteSymptom(symptom: SymptomEntity) {
+        viewModelScope.launch { symptomDao.delete(symptom) }
+    }
 }
+
 @Composable
 fun SymptomScreen(
     navController: NavController,
     vm: SymptomViewModel = viewModel()
 ) {
+    //get symptoms in viewmodel to display in UI
+    val symptoms by vm.symptoms.collectAsState(initial=emptyList())
+
     var showAddDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -96,8 +114,8 @@ fun SymptomScreen(
             }
         }
 
-        items(vm.symptoms.size) { index ->
-            SymptomCard(symptomName = vm.symptoms[index], vm = vm)
+        items(symptoms) { symptom ->
+            SymptomCard(symptom = symptom, vm = vm)
         }
 
         item {
@@ -119,7 +137,10 @@ fun SymptomScreen(
         AddSymptomDialog(
             onDismiss = { showAddDialog = false },
             onAddSymptom = { newSymptom ->
-                vm.addSymptom(newSymptom)
+                if (newSymptom.isNotBlank()) {
+                    vm.addSymptom(name = newSymptom, severity = 0, timeLength = 0)
+                }
+
                 showAddDialog = false
             }
         )
@@ -166,8 +187,9 @@ fun AddSymptomDialog(
 }
 
 @Composable
-fun SymptomCard(symptomName: String, vm: SymptomViewModel) {
-    val logEntry = vm.loggedSymptoms[symptomName]
+fun SymptomCard(symptom: SymptomEntity, vm: SymptomViewModel) {
+    val date = java.text.SimpleDateFormat("MMM d, yyyy")
+        .format(java.util.Date(symptom.timestamp))
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -179,14 +201,10 @@ fun SymptomCard(symptomName: String, vm: SymptomViewModel) {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(symptomName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            if (logEntry != null) {
-                Text("Severity: ${logEntry.severity}/10", fontSize = 14.sp)
-                if (logEntry.note.isNotBlank()) Text("Note: ${logEntry.note}", fontSize = 14.sp)
-                Text("Last logged: ${logEntry.date}", fontSize = 14.sp, color = Color.Gray)
-            } else {
-                Text("No data yet.", color = Color.Gray)
+            Text(symptom.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("Severity: ${symptom.severity}/10", fontSize = 14.sp)
+            Text("Last logged: $date", fontSize = 14.sp, color = Color.Gray)
             }
-        }
+
     }
 }

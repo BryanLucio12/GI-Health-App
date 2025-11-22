@@ -5,6 +5,8 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Delete
 import androidx.room.OnConflictStrategy
+import kotlinx.coroutines.flow.Flow
+
 
 
 //giving the methods the database has access to insert, newest symptom, delete symptom
@@ -15,7 +17,7 @@ interface SymptomDao {
     suspend fun insert(symptom: SymptomEntity)
 
     @Query("SELECT * FROM symptom_table ORDER BY timestamp DESC")
-    suspend fun getAllSymptoms(): List<SymptomEntity>
+    fun getAllSymptoms(): Flow<List<SymptomEntity>>
 
     @Delete
     suspend fun delete(symptom: SymptomEntity)
