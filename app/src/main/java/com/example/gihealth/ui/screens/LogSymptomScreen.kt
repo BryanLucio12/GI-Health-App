@@ -18,6 +18,8 @@ import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.lazy.items
+
 
 data class LoggedMeal(
     val food: String,
@@ -44,10 +46,23 @@ fun LogSymptomScreen(
     navController: NavController,
     symptomViewModel: SymptomViewModel = viewModel()
 ) {
+    //collect symptoms as state from viewmodel
+    val databaseSymptoms by symptomViewModel.symptoms.collectAsState(initial = emptyList())
+
+    //local state to keep track of slider rating and ntoes
     val symptomRatings = remember { mutableStateMapOf<String, Float>() }
     val symptomNotes = remember { mutableStateMapOf<String, String>() }
 
     val previousRoute = remember { navController.previousBackStackEntry?.destination?.route }
+
+    //predifined symptoms
+    val predefinedSymptoms = listOf("Abdominal Pain", "Bloating", "Nausea", "Diarrhea")
+
+    //combine predifined and added symptoms
+    val symptomsToShow = remember(databaseSymptoms) {
+        (predefinedSymptoms + databaseSymptoms.map { it.name }).distinct()
+    }
+
 
     Scaffold(
         topBar = {
@@ -81,15 +96,14 @@ fun LogSymptomScreen(
                     color = Color.DarkGray
                 )
             }
-
-            items(symptomViewModel.symptoms.size) { index ->
-                val symptom = symptomViewModel.symptoms[index]
+            //loops through all symptoms and shows card for each
+            items(symptomsToShow) { symptomName ->
                 SymptomLogCard(
-                    symptomName = symptom,
-                    rating = symptomRatings[symptom] ?: 0f,
-                    note = symptomNotes[symptom] ?: "",
-                    onRatingChange = { newValue -> symptomRatings[symptom] = newValue },
-                    onNoteChange = { newNote -> symptomNotes[symptom] = newNote }
+                    symptomName = symptomName,  // pass the name only
+                    rating = symptomRatings[symptomName] ?: 0f,
+                    note = symptomNotes[symptomName] ?: "",
+                    onRatingChange = { newValue -> symptomRatings[symptomName] = newValue },
+                    onNoteChange = { newNote -> symptomNotes[symptomName] = newNote }
                 )
             }
 
@@ -97,10 +111,14 @@ fun LogSymptomScreen(
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = {
-                        symptomRatings.forEach { (symptom, value) ->
-                            val note = symptomNotes[symptom] ?: ""
+                        symptomRatings.forEach { (name, value) ->
+                            val note = symptomNotes[name] ?: ""
                             if (value > 0) {
-                                symptomViewModel.logSymptom(symptom, value.toInt(), note)
+                                symptomViewModel.addSymptom(
+                                    name = name,
+                                    severity = value.toInt(),
+                                    timeLength = 0  // or handle as needed
+                                )
                             }
                         }
 

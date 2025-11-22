@@ -4,6 +4,7 @@ package com.example.gihealth.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.sql.Timestamp
+import kotlinx.coroutines.flow.Flow
 
 
 //creating table for the  symptom database
