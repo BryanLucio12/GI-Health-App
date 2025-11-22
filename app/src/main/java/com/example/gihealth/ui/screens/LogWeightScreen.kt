@@ -21,11 +21,13 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.MenuAnchorType
+import com.example.gihealth.data.WellBeingEntity
+import com.example.gihealth.data.WellBeingViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogWeightScreen(navController: NavController) {
-
+    val viewModel: WellBeingViewModel = viewModel()
     // state
     var weightText by remember { mutableStateOf("") }
     var weightError by remember { mutableStateOf<String?>(null) }
@@ -153,7 +155,17 @@ fun LogWeightScreen(navController: NavController) {
                 Button(
                     onClick = {
                         if (weightError == null && weightText.isNotEmpty()) {
-                            // save this shi in the database yur
+                            val entry = WellBeingEntity(
+                                timestamp = System.currentTimeMillis(),
+                                weight = weightText.toFloat(),
+                                unit = selectedUnit,
+                                sleepRating = sleepRating.toInt(),
+                                sleepNote = sleepNote,
+                                stressRating = stressRating.toInt(),
+                                stressNote = stressNote
+                            )
+
+                            viewModel.insertEntry(entry)
                             navController.popBackStack()
                         }
                     },
