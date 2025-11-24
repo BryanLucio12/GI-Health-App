@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,16 +24,22 @@ import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.example.gihealth.data.UserInfoViewModel
 import com.example.gihealth.data.JournalViewModel
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.gihealth.ui.onboarding.ProfileScreen
 import com.example.gihealth.ui.onboarding.QuestionnaireScreen
 import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
+import com.example.gihealth.ui.onboarding.SettingsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -182,13 +189,71 @@ fun MainNavHost() {
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController = navController) }
+        topBar = {
+            ProfileTopBar(navController = navController)
+        },
+        bottomBar = {
+            BottomNavigationBar(navController = navController)
+        }
     ) { padding ->
         NavHostContainer(
             navController = navController,
             padding = padding
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileTopBar(navController: NavController) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    TopAppBar(
+        title = {
+            Text(
+                text = "GI Health",
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        actions = {
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = Color.Black
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+
+                    DropdownMenuItem(
+                        text = { Text("Edit Profile") },
+                        onClick = {
+                            menuExpanded = false
+                            navController.navigate("profile")
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Settings") },
+                        onClick = {
+                            menuExpanded = false
+                            navController.navigate("settings")
+                        }
+                    )
+                }
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White,
+            titleContentColor = Color.Black
+        )
+    )
 }
 
 // In NavHostContainer(...)
@@ -280,6 +345,14 @@ fun NavHostContainer(
                 onClose = { navController.popBackStack() },
                 vm = vm
             )
+        }
+
+        composable("profile") {
+            ProfileScreen(navController = navController)
+        }
+
+        composable("settings") {
+            SettingsScreen(navController)
         }
     }
 }
