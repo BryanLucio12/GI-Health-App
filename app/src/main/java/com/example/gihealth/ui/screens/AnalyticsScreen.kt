@@ -20,6 +20,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.*
 import java.time.format.TextStyle
 import java.util.Locale
+import com.example.gihealth.utils.generatePdfReport
+import androidx.compose.ui.platform.LocalContext
+
 
 //DUMMY VALUES WILL BE REMOVED LATER
 class AnalyticsViewModel : ViewModel() {
@@ -80,6 +83,7 @@ fun AnalyticsScreen(
     var typeOfRange by remember { mutableStateOf("This Week") }
 
     val overviewOptions = listOf("Today", "Yesterday", "This Week", "Last Week", "This Month")
+    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier
@@ -129,6 +133,20 @@ fun AnalyticsScreen(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
+
+                // button to generate tha pdf!!! (feel free to move around to adjust to ui)
+                // calls generatePdfReport in utils/GeneratePDF.kt
+                Button(
+                    onClick = { generatePdfReport(context) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0F9D58)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .padding(top = 12.dp)
+                ) {
+                    Text("Generate PDF Report")
+                }
             }
         }
 
@@ -465,3 +483,4 @@ fun RecentTrendsCard() {
         }
     }
 }
+
