@@ -23,14 +23,18 @@ import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.example.gihealth.data.UserInfoViewModel
 import com.example.gihealth.data.JournalViewModel
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gihealth.ui.onboarding.ProfileScreen
 import com.example.gihealth.ui.onboarding.QuestionnaireScreen
 import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
 
@@ -182,13 +186,49 @@ fun MainNavHost() {
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController = navController) }
+        topBar = {
+            ProfileTopBar(
+                onProfileClick = {
+                    navController.navigate("profile")
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(navController = navController)
+        }
     ) { padding ->
         NavHostContainer(
             navController = navController,
             padding = padding
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileTopBar(onProfileClick: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                text = "GI Health",
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        actions = {
+            IconButton(onClick = onProfileClick) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Profile",
+                    tint = Color.Black
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White,
+            titleContentColor = Color.Black
+        )
+    )
 }
 
 // In NavHostContainer(...)
@@ -280,6 +320,10 @@ fun NavHostContainer(
                 onClose = { navController.popBackStack() },
                 vm = vm
             )
+        }
+
+        composable("profile") {
+            ProfileScreen(navController = navController)
         }
     }
 }
