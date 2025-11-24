@@ -160,10 +160,7 @@ fun ProfileScreen(navController: NavController) {
             //Blood type dropdown
             var expandedBloodType by remember { mutableStateOf(false) }
             val bloodTypeOptions = listOf(
-                "A+", "A−",
-                "B+", "B−",
-                "AB+", "AB−",
-                "O+", "O−"
+                "A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "Not sure"
             )
 
             ExposedDropdownMenuBox(

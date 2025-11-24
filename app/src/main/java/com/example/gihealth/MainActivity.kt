@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -34,9 +35,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.gihealth.ui.onboarding.ProfileScreen
 import com.example.gihealth.ui.onboarding.QuestionnaireScreen
 import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
+import com.example.gihealth.ui.onboarding.SettingsScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -187,11 +190,7 @@ fun MainNavHost() {
 
     Scaffold(
         topBar = {
-            ProfileTopBar(
-                onProfileClick = {
-                    navController.navigate("profile")
-                }
-            )
+            ProfileTopBar(navController = navController)
         },
         bottomBar = {
             BottomNavigationBar(navController = navController)
@@ -206,7 +205,9 @@ fun MainNavHost() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileTopBar(onProfileClick: () -> Unit) {
+fun ProfileTopBar(navController: NavController) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     TopAppBar(
         title = {
             Text(
@@ -216,12 +217,36 @@ fun ProfileTopBar(onProfileClick: () -> Unit) {
             )
         },
         actions = {
-            IconButton(onClick = onProfileClick) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = Color.Black
-                )
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = Color.Black
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+
+                    DropdownMenuItem(
+                        text = { Text("Edit Profile") },
+                        onClick = {
+                            menuExpanded = false
+                            navController.navigate("profile")
+                        }
+                    )
+
+                    DropdownMenuItem(
+                        text = { Text("Settings") },
+                        onClick = {
+                            menuExpanded = false
+                            navController.navigate("settings")
+                        }
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -324,6 +349,10 @@ fun NavHostContainer(
 
         composable("profile") {
             ProfileScreen(navController = navController)
+        }
+
+        composable("settings") {
+            SettingsScreen(navController)
         }
     }
 }
