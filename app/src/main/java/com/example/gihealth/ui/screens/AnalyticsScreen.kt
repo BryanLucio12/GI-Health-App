@@ -22,6 +22,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 import com.example.gihealth.utils.generatePdfReport
 import androidx.compose.ui.platform.LocalContext
+import com.example.gihealth.data.SymptomEntity
+import kotlin.collections.emptyList
 
 
 //DUMMY VALUES WILL BE REMOVED LATER
@@ -79,8 +81,10 @@ fun AnalyticsScreen(
     vm: CalendarViewModel,
     analyticsVM: AnalyticsViewModel = viewModel()
 ) {
+    val symptomViewModel: SymptomViewModel = viewModel()
     var expanded by remember { mutableStateOf(false) }
     var typeOfRange by remember { mutableStateOf("This Week") }
+    val symptoms by symptomViewModel.symptoms.collectAsState()
 
     val overviewOptions = listOf("Today", "Yesterday", "This Week", "Last Week", "This Month")
     val context = LocalContext.current
@@ -154,6 +158,8 @@ fun AnalyticsScreen(
 
         item { WeightTrackerCard(typeOfRange, analyticsVM) }
 
+        item { SeverityOverTimeCard(symptoms = symptoms, range = typeOfRange) }
+
         item { RecentTrendsCard() }
 
         item { MoodCalendarWidget(vm = vm, onOpen = onOpenCalendar) }
@@ -161,6 +167,254 @@ fun AnalyticsScreen(
         item { Spacer(Modifier.height(24.dp)) }
     }
 }
+
+@Composable
+fun SeverityOverTimeCard(
+    symptoms: List<SymptomEntity>,
+    range: String
+) {
+    val today = LocalDate.now()
+
+    val grouped = filterSymptomsForRange(symptoms, range)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+
+            Text("Symptom Severity (1–10)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (symptoms.isEmpty()) {
+                Text("No symptom logs available.")
+                return@Column
+            }
+
+            if (grouped.isEmpty()) {
+                Text("No data available for selected range.")
+                return@Column
+            }
+
+            if (range == "Today" || range == "Yesterday") {
+
+                val date = if (range == "Today") today else today.minusDays(1)
+                val dayList = grouped[date] ?: emptyList()
+
+                val value = if (dayList.isNotEmpty())
+                    dayList.map { it.severity }.average()
+                else 0.0
+
+                // Pick color
+                val color = when (value.toInt()) {
+                    in 1..3 -> Color(0xFFD32F2F)
+                    in 4..6 -> Color(0xFFFFC107)
+                    else -> Color(0xFF388E3C)
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = String.format("%.1f", value),
+                        fontSize = 72.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = color
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = if (range == "Today")
+                            "Average symptom severity today"
+                        else
+                            "Average symptom severity yesterday",
+                        color = Color.DarkGray,
+                        fontSize = 16.sp
+                    )
+                }
+
+                return@Column
+            }
+
+            // --- Graph Mode (Week, Last Week, Month) ---
+            val dailyAverages = grouped.toSortedMap().mapValues { (_, list) ->
+                list.map { it.severity }.average()
+            }
+
+            SymptomSeverityGraph(dailyAverages, range)
+        }
+    }
+}
+
+
+
+
+fun filterSymptomsForRange(
+    symptoms: List<SymptomEntity>,
+    range: String
+): Map<LocalDate, List<SymptomEntity>> {
+
+    val today = LocalDate.now()
+    val startOfWeek = today.with(DayOfWeek.MONDAY)
+    val lastWeekStart = startOfWeek.minusWeeks(1)
+    val lastWeekEnd = startOfWeek.minusDays(1)
+
+    val filtered = symptoms.filter { symptom ->
+
+        val date = Instant.ofEpochMilli(symptom.timestamp)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
+        when (range) {
+            "Today" -> date == today
+            "Yesterday" -> date == today.minusDays(1)
+
+            "This Week" ->
+                date in startOfWeek..today
+
+            "Last Week" ->
+                date in lastWeekStart..lastWeekEnd
+
+            "This Month" ->
+                date.month == today.month && date.year == today.year
+
+            else -> false
+        }
+    }
+
+    return filtered.groupBy {
+        Instant.ofEpochMilli(it.timestamp)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+    }
+}
+
+@Composable
+fun SymptomSeverityGraph(
+    data: Map<LocalDate, Double>,
+    range: String
+) {
+    val today = LocalDate.now()
+    val startOfWeek = today.with(DayOfWeek.MONDAY)
+
+    // Generate full range of dates (even if empty)
+    val days = when (range) {
+        "Today" -> listOf(today)
+        "Yesterday" -> listOf(today.minusDays(1))
+        "This Week" -> (0..6).map { startOfWeek.plusDays(it.toLong()) }
+        "Last Week" -> (0..6).map { startOfWeek.minusWeeks(1).plusDays(it.toLong()) }
+        "This Month" -> (1..today.lengthOfMonth()).map { today.withDayOfMonth(it) }
+        else -> emptyList()
+    }
+
+    // Extract severity values (null if no logs)
+    val values = days.map { date -> data[date] }
+
+    val dayLabels = days.map {
+        when (range) {
+            "This Month" -> it.dayOfMonth.toString()
+            else -> it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+        }
+    }
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+    ) {
+        val chartWidth = size.width
+        val chartHeight = size.height * 0.80f
+
+        val spacingX = if (days.size > 1)
+            chartWidth / (days.size - 1)
+        else
+            chartWidth / 2f
+
+        // Y-scale range
+        val minY = 0f
+        val maxY = 10f
+        val rangeY = maxY - minY
+
+        // Horizontal grid + labels
+        for (i in 1..10) {
+            val y = chartHeight - (i / rangeY * chartHeight)
+            drawLine(
+                Color.LightGray.copy(alpha = 0.25f),
+                Offset(0f, y),
+                Offset(chartWidth, y),
+                1f
+            )
+            drawContext.canvas.nativeCanvas.drawText(
+                i.toString(),
+                -40f,
+                y + 5f,
+                android.graphics.Paint().apply {
+                    color = android.graphics.Color.DKGRAY
+                    textSize = 26f
+                    textAlign = android.graphics.Paint.Align.LEFT
+                }
+            )
+        }
+
+        // Line + dots
+        for (i in values.indices) {
+            val x = if (days.size > 1) i * spacingX else chartWidth / 2f
+            val value = values[i]
+
+            if (value != null) {
+                val y = chartHeight - (value / maxY * chartHeight)
+
+                // Draw line segment from previous point
+                if (i > 0 && values[i - 1] != null) {
+                    val prevX = (i - 1) * spacingX
+                    val prevY =
+                        chartHeight - ((values[i - 1]!! / maxY) * chartHeight)
+
+                    drawLine(
+                        Color(0xFF0F9D58),
+                        Offset(prevX.toFloat(), prevY.toFloat()),
+                        Offset(x.toFloat(), y.toFloat()),
+                        4f,
+                        StrokeCap.Round
+                    )
+                }
+
+                // Draw data point
+                drawCircle(
+                    color = Color(0xFF0F9D58),
+                    radius = 7f,
+                    center = Offset(x.toFloat(), y.toFloat())
+                )
+            }
+        }
+
+        // Draw bottom labels
+        val labelInterval = if (range == "This Month") 3 else 1
+        days.forEachIndexed { i, _ ->
+            val x = if (days.size > 1) i * spacingX else chartWidth / 2f
+
+            if (i % labelInterval == 0 || i == days.lastIndex) {
+                drawContext.canvas.nativeCanvas.drawText(
+                    dayLabels[i],
+                    x,
+                    size.height,
+                    android.graphics.Paint().apply {
+                        color = android.graphics.Color.DKGRAY
+                        textSize = 28f
+                        textAlign = android.graphics.Paint.Align.CENTER
+                    }
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun DigestiveComfortCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
