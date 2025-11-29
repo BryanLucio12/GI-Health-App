@@ -24,6 +24,8 @@ import com.example.gihealth.utils.generatePdfReport
 import androidx.compose.ui.platform.LocalContext
 import com.example.gihealth.data.SymptomEntity
 import kotlin.collections.emptyList
+import com.example.gihealth.data.TopSymptomResults
+import com.example.gihealth.data.SymptomWithTrend
 
 
 //DUMMY VALUES WILL BE REMOVED LATER
@@ -160,6 +162,8 @@ fun AnalyticsScreen(
 
         item { SeverityOverTimeCard(symptoms = symptoms, range = typeOfRange) }
 
+        item { TopSymptomsCard(topSymptoms = computeTopSymptomsWithTrend(symptoms, typeOfRange)) }
+
         item { RecentTrendsCard() }
 
         item { MoodCalendarWidget(vm = vm, onOpen = onOpenCalendar) }
@@ -250,9 +254,6 @@ fun SeverityOverTimeCard(
         }
     }
 }
-
-
-
 
 fun filterSymptomsForRange(
     symptoms: List<SymptomEntity>,
@@ -415,6 +416,168 @@ fun SymptomSeverityGraph(
     }
 }
 
+@Composable
+fun TopSymptomsCard(
+    topSymptoms: List<SymptomWithTrend>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+
+            Text("Most Common Symptoms", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+
+            if (topSymptoms.isEmpty()) {
+                Text("No symptom logs available.")
+                return@Column
+            } else {
+                topSymptoms.forEachIndexed { index, s ->
+
+                    // TREND ARROW — depends on symptom trend
+                    val arrow = when (s.trend) {
+                        "up" -> "↑"
+                        "down" -> "↓"
+                        else -> "→"
+                    }
+
+                    // ARROW COLOR
+                    val arrowColor = when (s.trend) {
+                        "up" -> Color(0xFFD32F2F)        // red
+                        "down" -> Color(0xFF388E3C)      // green
+                        else -> Color(0xFF757575)        // grey
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = s.name,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp
+                            )
+
+                            Text(
+                                "Logged ${s.count} times",
+                                color = Color.DarkGray,
+                                fontSize = 14.sp
+                            )
+
+                            Text(
+                                "Avg Severity: ${String.format("%.1f", s.avgSeverity)}",
+                                color = Color.DarkGray,
+                                fontSize = 14.sp
+                            )
+                        }
+
+                        // The TREND ARROW
+                        Text(
+                            text = arrow,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = arrowColor
+                        )
+                    }
+
+                    if (index != topSymptoms.lastIndex) {
+                        HorizontalDivider(
+                            color = Color(0xFFE0E0E0),
+                            thickness = 0.7.dp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun previousRange(range: String): String = when (range) {
+    "Today" -> "Yesterday"
+    "This Week" -> "Last Week"
+    "This Month" -> "Last Month"
+    else -> range
+}
+
+fun computeTopSymptomsForRange(
+    symptoms: List<SymptomEntity>,
+    range: String
+): List<TopSymptomResults> {
+
+    val today = LocalDate.now()
+    val grouped = filterSymptomsForRange(symptoms, range)
+
+    if (range == "Today" || range == "Yesterday") {
+
+        val targetDay = if (range == "Today") today else today.minusDays(1)
+        val logs = grouped[targetDay] ?: emptyList()
+
+        return logs
+            .groupBy { it.name }
+            .map { (name, entries) ->
+                TopSymptomResults(
+                    name = name,
+                    count = entries.size,
+                    avgSeverity = entries.map { it.severity }.average()
+                )
+            }
+            .sortedByDescending { it.count }
+            .take(3)
+    }
+
+    val combinedLogs = grouped.values.flatten()
+
+    return combinedLogs
+        .groupBy { it.name }
+        .map { (name, entries) ->
+            TopSymptomResults(
+                name = name,
+                count = entries.size,
+                avgSeverity = entries.map { it.severity }.average()
+            )
+        }
+        .sortedByDescending { it.count }
+        .take(3)
+}
+
+fun computeTopSymptomsWithTrend(
+    symptoms: List<SymptomEntity>,
+    range: String
+): List<SymptomWithTrend> {
+
+    val current = computeTopSymptomsForRange(symptoms, range)
+    val previous = computeTopSymptomsForRange(symptoms, previousRange(range))
+
+    val prevMap = previous.associateBy { it.name }
+
+    return current.map { cur ->
+        val prev = prevMap[cur.name]?.avgSeverity
+        val diff = if (prev != null) cur.avgSeverity - prev else 0.0
+
+        val trend = when {
+            prev == null -> "→"
+            diff > 0.5 -> "↑"
+            diff < -0.5 -> "↓"
+            else -> "→"
+        }
+
+        SymptomWithTrend(
+            name = cur.name,
+            count = cur.count,
+            avgSeverity = cur.avgSeverity,
+            trend = trend,
+            prevAvg = prev
+        )
+    }
+}
 
 @Composable
 fun DigestiveComfortCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {

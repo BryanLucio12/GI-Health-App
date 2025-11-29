@@ -25,6 +25,14 @@ data class DailyStatus(
     val dayStatus: String       //good or bad
 )
 
+data class SymptomWithTrend(
+    val name: String,
+    val count: Int,
+    val avgSeverity: Double,
+    val trend: String,
+    val prevAvg: Double?
+)
+
 //giving the methods the database has access to insert, newest symptom, delete symptom
 @Dao
 interface SymptomDao {
