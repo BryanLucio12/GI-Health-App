@@ -6,21 +6,25 @@ import android.app.TimePickerDialog
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.graphics.Color
 
 @Composable
 fun LogFoodScreen(
@@ -32,11 +36,16 @@ fun LogFoodScreen(
 
     var food by remember { mutableStateOf("") }
     var meal by remember { mutableStateOf("Lunch") }
-    var ingredients by remember { mutableStateOf("") }   // auto-filled only
+
+    // Ingredients as editable list and text field for adding new items
+    var ingredientsList by remember { mutableStateOf<List<String>>(emptyList()) }
+    var newIngredientText by remember { mutableStateOf("") }
+
+    // For showing long ingredient text in a dialog
+    var selectedIngredientForDialog by remember { mutableStateOf<String?>(null) }
 
     // Observe search results from catalog
     val searchResults by foodViewModel.searchResults.collectAsState()
-    var foodDropdownExpanded by remember { mutableStateOf(false) }
 
     // Time handling
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
@@ -49,6 +58,9 @@ fun LogFoodScreen(
     // Date
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
+    // Scroll state for whole screen
+    val scrollState = rememberScrollState()
 
     // Handle system back gesture
     BackHandler {
@@ -74,7 +86,8 @@ fun LogFoodScreen(
             modifier = Modifier
                 .padding(inner)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Date selector
@@ -106,42 +119,60 @@ fun LogFoodScreen(
                 }
             }
 
-            // Food input with dropdown suggestions (from branded catalog)
-            ExposedDropdownMenuBox(
-                expanded = foodDropdownExpanded && searchResults.isNotEmpty(),
-                onExpandedChange = { expanded ->
-                    foodDropdownExpanded = expanded && searchResults.isNotEmpty()
-                }
-            ) {
-                OutlinedTextField(
-                    value = food,
-                    onValueChange = {
-                        food = it
-                        ingredients = "" // clear any previous auto ingredients if user edits
-                        foodViewModel.searchFoods(it)
-                        foodDropdownExpanded = it.isNotBlank()
-                    },
-                    label = { Text("What did you eat?") },
-                    placeholder = { Text("e.g., Turkey sandwich") },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
-                )
+            // Food Dropdown
+            OutlinedTextField(
+                value = food,
+                onValueChange = {
+                    food = it
+                    // Clear any previous auto ingredients if user edits the food name
+                    ingredientsList = emptyList()
+                    newIngredientText = ""
+                    foodViewModel.searchFoods(it)
+                },
+                label = { Text("What did you eat?") },
+                placeholder = { Text("e.g., Turkey sandwich") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                ExposedDropdownMenu(
-                    expanded = foodDropdownExpanded && searchResults.isNotEmpty(),
-                    onDismissRequest = { foodDropdownExpanded = false }
+            // Suggestions list below the text field
+            if (food.isNotBlank() && searchResults.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    searchResults.forEach { item ->
-                        DropdownMenuItem(
-                            text = { Text(item.name) },
-                            onClick = {
-                                // Auto-fill both the food name and ingredients from catalog
-                                food = item.name
-                                ingredients = item.ingredients
-                                foodDropdownExpanded = false
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        searchResults.forEach { item ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        // Auto-fill both the food name and ingredients list from catalog
+                                        food = item.name
+
+                                        val parsed = item.ingredients
+                                            .split(',', ';', '\n')
+                                            .map { it.trim() }
+                                            .filter { it.isNotEmpty() }
+
+                                        ingredientsList = parsed
+                                        newIngredientText = ""
+                                        // keep suggestions until user types again, or you can clear search:
+                                        foodViewModel.searchFoods("") // optional: clear suggestions
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = item.name,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -218,21 +249,83 @@ fun LogFoodScreen(
                 }
             }
 
-            // Read-only view of auto-filled ingredients (if available)
-            if (ingredients.isNotBlank()) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+            // Editable ingredients section
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Ingredients",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                // Existing ingredients list with remove buttons
+                if (ingredientsList.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ingredientsList.forEachIndexed { index, ingredient ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                // Truncated preview, tap to see full in dialog
+                                Text(
+                                    text = ingredient,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            selectedIngredientForDialog = ingredient
+                                        }
+                                )
+                                IconButton(
+                                    onClick = {
+                                        ingredientsList =
+                                            ingredientsList.toMutableList().also { it.removeAt(index) }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Remove ingredient"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
                     Text(
-                        text = "Ingredients (auto-filled):",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = ingredients,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "No ingredients yet. Add some below.",
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
+                }
+
+                // Add new ingredient row
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = newIngredientText,
+                        onValueChange = { newIngredientText = it },
+                        label = { Text("Add ingredient") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = {
+                            val cleaned = newIngredientText.trim()
+                            if (cleaned.isNotEmpty()) {
+                                ingredientsList = ingredientsList + cleaned
+                                newIngredientText = ""
+                            }
+                        },
+                        enabled = newIngredientText.isNotBlank()
+                    ) {
+                        Text("Add")
+                    }
                 }
             }
 
@@ -241,11 +334,13 @@ fun LogFoodScreen(
             // Save Button
             Button(
                 onClick = {
+                    val ingredientsString = ingredientsList.joinToString(", ")
+
                     onSave?.invoke(
                         food,
                         selectedTime.format(timeFormatter),
                         meal,
-                        ingredients,
+                        ingredientsString,
                         selectedDate.format(dateFormatter)
                     )
                 },
@@ -255,5 +350,24 @@ fun LogFoodScreen(
                 Text("Save Log")
             }
         }
+    }
+
+    // Dialog showing full ingredient text when tapped
+    if (selectedIngredientForDialog != null) {
+        AlertDialog(
+            onDismissRequest = { selectedIngredientForDialog = null },
+            confirmButton = {
+                TextButton(onClick = { selectedIngredientForDialog = null }) {
+                    Text("Close")
+                }
+            },
+            title = { Text("Ingredient") },
+            text = {
+                Text(
+                    text = selectedIngredientForDialog ?: "",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        )
     }
 }
