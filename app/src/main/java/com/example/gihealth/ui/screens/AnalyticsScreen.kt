@@ -1,39 +1,44 @@
 package com.example.gihealth.ui.screens
 
+import android.app.Application
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gihealth.data.SymptomEntity
+import com.example.gihealth.data.WellBeingEntity
+import com.example.gihealth.data.WellBeingViewModel
+import com.example.gihealth.utils.generatePdfReport
 import java.time.*
 import java.time.format.TextStyle
 import java.util.Locale
-import com.example.gihealth.utils.generatePdfReport
-import androidx.compose.ui.platform.LocalContext
-import com.example.gihealth.data.SymptomEntity
 import kotlin.collections.emptyList
+import kotlin.math.roundToInt
 
-
-//DUMMY VALUES WILL BE REMOVED LATER
+// DUMMY VALUES WILL BE REMOVED LATER
 class AnalyticsViewModel : ViewModel() {
     private val today = LocalDate.now()
     private val startOfWeek = today.with(DayOfWeek.MONDAY)
 
     // Base values
     private val baseComfort = (4..8).random()
-    private val baseWeight = (150..180).random()
+    private val baseWeight = (150..180).random()   // still used only for mock digestive, not weight DB
 
     // Digestive comfort mock data
     val digestiveData: Map<String, Map<LocalDate, Int>> = mapOf(
@@ -49,30 +54,7 @@ class AnalyticsViewModel : ViewModel() {
             today.withDayOfMonth(it + 1) to (baseComfort + (-2..2).random()).coerceIn(1, 10)
         }
     )
-
-    val weightData: Map<String, Map<LocalDate, Int>> = run {
-        val weekWeights = generateSequence(baseWeight) {
-            (it + (-2..2).random()).coerceIn(120, 220)
-        }.take(7).toList()
-
-        val monthWeights = generateSequence(baseWeight) {
-            (it + (-1..1).random()).coerceIn(120, 220)
-        }.take(today.lengthOfMonth()).toList()
-
-        mapOf(
-            "Today" to mapOf(today to baseWeight + (-1..1).random()),
-            "Yesterday" to mapOf(today.minusDays(1) to baseWeight + (-2..2).random()),
-            "This Week" to (0..6).associate { startOfWeek.plusDays(it.toLong()) to weekWeights[it] },
-            "Last Week" to (0..6).associate {
-                startOfWeek.minusWeeks(1).plusDays(it.toLong()) to (baseWeight + (-5..5).random())
-            },
-            "This Month" to (0 until today.lengthOfMonth()).associate {
-                today.withDayOfMonth(it + 1) to monthWeights[it]
-            }
-        )
-    }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,13 +63,24 @@ fun AnalyticsScreen(
     vm: CalendarViewModel,
     analyticsVM: AnalyticsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+
     val symptomViewModel: SymptomViewModel = viewModel()
+
+    // NEW: WellBeingViewModel for real weight data
+    val wellBeingViewModel: WellBeingViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
+
     var expanded by remember { mutableStateOf(false) }
     var typeOfRange by remember { mutableStateOf("This Week") }
+
     val symptoms by symptomViewModel.symptoms.collectAsState()
+    val wellBeingEntries by wellBeingViewModel.entries.observeAsState(emptyList())
 
     val overviewOptions = listOf("Today", "Yesterday", "This Week", "Last Week", "This Month")
-    val context = LocalContext.current
 
     LazyColumn(
         modifier = Modifier
@@ -138,8 +131,7 @@ fun AnalyticsScreen(
                 }
                 Spacer(Modifier.height(8.dp))
 
-                // button to generate tha pdf!!! (feel free to move around to adjust to ui)
-                // calls generatePdfReport in utils/GeneratePDF.kt
+                // button to generate the pdf report
                 Button(
                     onClick = { generatePdfReport(context) },
                     colors = ButtonDefaults.buttonColors(
@@ -156,7 +148,8 @@ fun AnalyticsScreen(
 
         item { DigestiveComfortCard(typeOfRange, analyticsVM) }
 
-        item { WeightTrackerCard(typeOfRange, analyticsVM) }
+        // UPDATED: pass real WellBeing entries to the weight tracker
+        item { WeightTrackerCard(typeOfRange = typeOfRange, entries = wellBeingEntries) }
 
         item { SeverityOverTimeCard(symptoms = symptoms, range = typeOfRange) }
 
@@ -251,9 +244,6 @@ fun SeverityOverTimeCard(
     }
 }
 
-
-
-
 fun filterSymptomsForRange(
     symptoms: List<SymptomEntity>,
     range: String
@@ -273,16 +263,9 @@ fun filterSymptomsForRange(
         when (range) {
             "Today" -> date == today
             "Yesterday" -> date == today.minusDays(1)
-
-            "This Week" ->
-                date in startOfWeek..today
-
-            "Last Week" ->
-                date in lastWeekStart..lastWeekEnd
-
-            "This Month" ->
-                date.month == today.month && date.year == today.year
-
+            "This Week" -> date in startOfWeek..today
+            "Last Week" -> date in lastWeekStart..lastWeekEnd
+            "This Month" -> date.month == today.month && date.year == today.year
             else -> false
         }
     }
@@ -415,7 +398,6 @@ fun SymptomSeverityGraph(
     }
 }
 
-
 @Composable
 fun DigestiveComfortCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
     val today = LocalDate.now()
@@ -542,8 +524,12 @@ fun DigestiveComfortGraph(
                 val startY = chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
                 val endX = (daysToShow.indexOf(validDates[i])) * spacingX
                 val endY = chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
-                drawLine(Color(0xFF0F9D58), Offset(startX, startY),
-                    Offset(endX, endY), 5f, StrokeCap.Round
+                drawLine(
+                    Color(0xFF0F9D58),
+                    Offset(startX, startY),
+                    Offset(endX, endY),
+                    5f,
+                    StrokeCap.Round
                 )
             }
         }
@@ -574,9 +560,8 @@ fun DigestiveComfortGraph(
 }
 
 @Composable
-fun WeightTrackerCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
+fun WeightTrackerCard(typeOfRange: String, entries: List<WellBeingEntity>) {
     val today = LocalDate.now()
-    val mockData = analyticsVM.weightData[typeOfRange] ?: emptyMap()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -588,9 +573,43 @@ fun WeightTrackerCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
             Text("Weight Tracker (lbs)", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
 
+            if (entries.isEmpty()) {
+                Text("No weight entries logged yet.")
+                return@Column
+            }
+
+            // Build map of LocalDate -> Int (rounded weight), taking the latest entry for each day
+            val weightsByDate: Map<LocalDate, Int> = remember(entries) {
+                entries
+                    .groupBy { entry ->
+                        Instant.ofEpochMilli(entry.timestamp)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                    }
+                    .mapValues { (_, list) ->
+                        list.maxBy { it.timestamp }.weight.roundToInt()
+                    }
+            }
+
             if (typeOfRange == "Today" || typeOfRange == "Yesterday") {
                 val day = if (typeOfRange == "Today") today else today.minusDays(1)
-                val value = mockData[day] ?: 160
+                val value = weightsByDate[day]
+
+                if (value == null) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        Text(
+                            text = "No weight logged for ${if (typeOfRange == "Today") "today" else "yesterday"}.",
+                            color = Color.DarkGray
+                        )
+                    }
+                    return@Column
+                }
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -615,9 +634,30 @@ fun WeightTrackerCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
                         fontSize = 16.sp
                     )
                 }
-            } else {
-                WeightGraph(mockData, typeOfRange)
+
+                return@Column
             }
+
+            // For ranges that show a graph: This Week, Last Week, This Month
+            val startOfWeek = today.with(DayOfWeek.MONDAY)
+            val lastWeekStart = startOfWeek.minusWeeks(1)
+            val lastWeekEnd = startOfWeek.minusDays(1)
+
+            val rangeData: Map<LocalDate, Int> = when (typeOfRange) {
+                "This Week" -> weightsByDate.filterKeys { it in startOfWeek..today }
+                "Last Week" -> weightsByDate.filterKeys { it in lastWeekStart..lastWeekEnd }
+                "This Month" -> weightsByDate.filterKeys {
+                    it.month == today.month && it.year == today.year
+                }
+                else -> emptyMap()
+            }
+
+            if (rangeData.isEmpty()) {
+                Text("No weight data available for selected range.")
+                return@Column
+            }
+
+            WeightGraph(data = rangeData, typeOfRange = typeOfRange)
         }
     }
 }
@@ -684,7 +724,13 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
                 val startY = chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
                 val endX = (daysToShow.indexOf(validDates[i])) * spacingX
                 val endY = chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
-                drawLine(Color(0xFF0F9D58), Offset(startX, startY), Offset(endX, endY), 5f, StrokeCap.Round)
+                drawLine(
+                    Color(0xFF0F9D58),
+                    Offset(startX, startY),
+                    Offset(endX, endY),
+                    5f,
+                    StrokeCap.Round
+                )
             }
         }
 
@@ -712,7 +758,6 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
         }
     }
 }
-
 
 @Composable
 fun RecentTrendsCard() {
