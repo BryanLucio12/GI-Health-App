@@ -55,8 +55,60 @@ fun LogSymptomScreen(
 
     val previousRoute = remember { navController.previousBackStackEntry?.destination?.route }
 
-    //predifined symptoms
-    val predefinedSymptoms = listOf("Abdominal Pain", "Bloating", "Nausea", "Diarrhea")
+    //predifined symptoms from sponsor fill in pdf
+    val predefinedSymptoms = listOf(
+        "Abdominal pain",
+        "Anorectal pain/itching",
+        "Bloating/gas",
+        "Blood in stool",
+        "Change in bowel habits",
+        "Constipation",
+        "Diarrhea",
+        "Incontinence of stool",
+        "Heartburn/reflux",
+        "Difficulty swallowing",
+        "Nausea",
+        "Vomiting",
+        "Black tarry stools",
+        "Dark urine",
+        "Heavy menstruation",
+        "Pregnancy",
+        "Frequent urination",
+        "Blood in urine",
+        "Itching",
+        "Jaundice",
+        "Rashes",
+        "Frequent headaches",
+        "Memory loss/confusion",
+        "Numbness or tingling",
+        "Cold intolerance",
+        "Excessive thirst",
+        "Fatigue",
+        "Fever",
+        "Loss of appetite",
+        "Night sweats",
+        "Weight gain",
+        "Weight loss",
+        "Anxiety",
+        "Depression",
+        "Double vision",
+        "Eye irritation",
+        "Eye pain",
+        "Eye Redness",
+        "Sore throat",
+        "Hoarseness",
+        "Mouth sores",
+        "Easy bruising",
+        "Prolonged bleeding",
+        "Back pain",
+        "Joint pain",
+        "Frequent cough",
+        "Snoring",
+        "Sleep apnea",
+        "Wheezing",
+        "Shortness of breath",
+        "Allergies"
+    )
 
     //combine predifined and added symptoms
     val symptomsToShow = remember(databaseSymptoms) {
