@@ -5,41 +5,45 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.gihealth.ui.onboarding.CreatePinScreen
 import com.example.gihealth.ui.onboarding.EnterPinScreen
 import com.example.gihealth.ui.onboarding.ForgotPinScreen
+import com.example.gihealth.ui.onboarding.ProfileScreen
+import com.example.gihealth.ui.onboarding.QuestionnaireScreen
+import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
+import com.example.gihealth.ui.onboarding.SettingsScreen
 import com.example.gihealth.ui.onboarding.UserSetupScreen
 import com.example.gihealth.ui.screens.*
 import com.example.gihealth.ui.logroutes.LogFoodRoute
 import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gihealth.data.UserInfoViewModel
 import com.example.gihealth.data.JournalViewModel
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.font.FontWeight
+import com.example.gihealth.data.FoodDatabase
+import com.example.gihealth.data.FoodEntity
 import com.example.gihealth.ui.viewmodel.FoodViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import com.example.gihealth.ui.onboarding.ProfileScreen
-import com.example.gihealth.ui.onboarding.QuestionnaireScreen
-import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
-import com.example.gihealth.ui.onboarding.SettingsScreen
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,20 +63,22 @@ class MainActivity : ComponentActivity() {
 fun AppNavigator() {
     val navController = rememberNavController()
     val context = LocalContext.current
+
     // Initialize the userinfo viewmodel to access userinfo db
     val userInfoViewModel: UserInfoViewModel =
-        androidx.lifecycle.viewmodel.compose.viewModel(
-            factory = ViewModelProvider.AndroidViewModelFactory(context.applicationContext as android.app.Application)
+        viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory(
+                context.applicationContext as android.app.Application
+            )
         )
 
-
-        //look at userinfo livedata to know if account already set up
+    // look at userinfo livedata to know if account already set up
     val userInfo by userInfoViewModel.userInfo.observeAsState()
-    //if pin already created
+    // if pin already created
     val hasPin = userInfo?.pin?.let { it != 0 } ?: false
-    //if user has already completed setup name required
+    // if user has already completed setup name required
     val hasSetupCompleted = userInfo?.name?.isNotBlank() == true
-    //determine the first screen shown based on pin and setup status
+    // determine the first screen shown based on pin and setup status
     val savedPin = userInfo?.pin?.toString() ?: ""
     val startDestination = when {
         !hasPin -> "create_pin?reset=false"
@@ -80,9 +86,7 @@ fun AppNavigator() {
         else -> "enter_pin"
     }
 
-
     NavHost(navController = navController, startDestination = startDestination) {
-
 
         // ➡️ Create PIN
         composable("create_pin?reset={reset}") { backStackEntry ->
@@ -91,14 +95,13 @@ fun AppNavigator() {
             CreatePinScreen(
                 navController = navController,
                 onPinCreated = {
-
                     if (reset) {
                         // reset the pin
                         navController.navigate("enter_pin") {
                             popUpTo("create_pin") { inclusive = true }
                         }
                     } else {
-                        //Questions asked for first time user
+                        // Questions asked for first time user
                         navController.navigate("questionnaire") {
                             popUpTo("create_pin") { inclusive = true }
                         }
@@ -125,7 +128,7 @@ fun AppNavigator() {
                 savedPin = savedPin,
                 navController = navController,
                 loginSuccess = {
-                    if (userInfo?.name?.isNotBlank()==true) {
+                    if (userInfo?.name?.isNotBlank() == true) {
                         navController.navigate("main_app") {
                             popUpTo("enter_pin") { inclusive = true }
                         }
@@ -141,9 +144,8 @@ fun AppNavigator() {
         // ➡️ User Setup
         composable("user_setup") {
             UserSetupScreen(
-                userInfoViewModel=userInfoViewModel, //pass viewmodel to save user info
+                userInfoViewModel = userInfoViewModel, // pass viewmodel to save user info
                 onSetUpComplete = {
-
                     navController.navigate("main_app") {
                         popUpTo("user_setup") { inclusive = true }
                     }
@@ -256,17 +258,35 @@ fun ProfileTopBar(navController: NavController) {
     )
 }
 
-// In NavHostContainer(...)
 @Composable
 fun NavHostContainer(
     navController: NavHostController,
     padding: PaddingValues
 ) {
+    val context = LocalContext.current
+
     val vm: CalendarViewModel = viewModel()
     val symptomViewModel: SymptomViewModel = viewModel()
     val foodVm: FoodViewModel = viewModel()
 
+    // today's foods, for the Food screen
     val todayFoods by foodVm.todayFoods.observeAsState(emptyList())
+
+    // shared JournalViewModel (same as in JournalScreen)
+    val journalViewModel: JournalViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as android.app.Application
+        )
+    )
+
+    // ALL foods for calendar (we load them directly from DB)
+    var allFoods by remember { mutableStateOf<List<FoodEntity>>(emptyList()) }
+
+    // Any time today's list changes (user logs something), re-query all foods
+    LaunchedEffect(todayFoods) {
+        val db = FoodDatabase.getDatabase(context)
+        allFoods = db.foodDao().getAllFoods()
+    }
 
     NavHost(
         navController = navController,
@@ -284,7 +304,6 @@ fun NavHostContainer(
                     "date" to entity.date
                 )
             }
-
 
             FoodScreen(
                 navController = navController,
@@ -308,7 +327,6 @@ fun NavHostContainer(
                 onBackPressed = { navController.popBackStack() }
             )
         }
-
 
         composable("symptoms") {
             SymptomScreen(navController = navController, vm = symptomViewModel)
@@ -341,9 +359,73 @@ fun NavHostContainer(
         }
 
         composable("calendar") {
+
+            // Food dates (from LogFoodScreen) use "MMM d, yyyy" like "Feb 27, 2025"
+            val foodDateFormatter = remember {
+                DateTimeFormatter.ofPattern("MMM d, yyyy")
+            }
+
+            // Journal dates use "MMMM d, yyyy" like "February 27, 2025"
+            val journalDateFormatter = remember {
+                DateTimeFormatter.ofPattern("MMMM d, yyyy")
+            }
+
+            val journalEntries by journalViewModel.journalEntries.collectAsState()
+            val symptoms by symptomViewModel.symptoms.collectAsState(initial = emptyList())
+
             FullCalendarScreen(
                 onClose = { navController.popBackStack() },
-                vm = vm
+                vm = vm,
+
+                // FOOD for selected date
+                getFoodForDate = { date ->
+                    val dateString = date.format(foodDateFormatter)
+
+                    val foodsForDate = allFoods.filter { it.date == dateString }
+
+                    if (foodsForDate.isEmpty()) null
+                    else FoodDay(
+                        breakfast = foodsForDate
+                            .filter { it.meal == "Breakfast" }
+                            .joinToString { it.name },
+                        lunch = foodsForDate
+                            .filter { it.meal == "Lunch" }
+                            .joinToString { it.name },
+                        dinner = foodsForDate
+                            .filter { it.meal == "Dinner" }
+                            .joinToString { it.name }
+                    )
+                },
+
+                // JOURNAL for selected date
+                getJournalForDate = { date ->
+                    val dateString = date.format(journalDateFormatter)
+
+                    journalEntries
+                        .filter { it.date == dateString }
+                        .joinToString("\n\n") { it.entry }
+                        .ifBlank { null }
+                },
+
+                // SYMPTOMS stays the same
+                getSymptomsForDate = { date ->
+                    val startOfDay = date
+                        .atStartOfDay(ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+                    val endOfDay = date
+                        .plusDays(1)
+                        .atStartOfDay(ZoneId.systemDefault())
+                        .toInstant()
+                        .toEpochMilli()
+
+                    val daySymptoms = symptoms.filter { it.timestamp in startOfDay until endOfDay }
+
+                    if (daySymptoms.isEmpty()) null
+                    else daySymptoms.joinToString("\n") {
+                        "${it.name}: ${it.severity}/10"
+                    }
+                }
             )
         }
 
@@ -356,8 +438,6 @@ fun NavHostContainer(
         }
     }
 }
-
-
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
