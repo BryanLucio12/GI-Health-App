@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,12 @@ import com.example.gihealth.data.FoodEntity
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +81,19 @@ fun AppNavigator() {
 
     // look at userinfo livedata to know if account already set up
     val userInfo by userInfoViewModel.userInfo.observeAsState()
+
+    // Show a loading screen while userInfo is null
+    if (userInfo == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(16.dp)) // small gap
+            Text(text = "Loading...")
+        }
+        return
+    }
     // if pin already created
     val hasPin = userInfo?.pin?.let { it != 0 } ?: false
     // if user has already completed setup name required

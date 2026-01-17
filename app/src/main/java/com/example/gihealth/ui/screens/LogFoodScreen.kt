@@ -338,7 +338,7 @@ fun TimePickerDropdownDialog(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Hour column (infinite scroll)
+                // Hour column
                 TimeColumn(
                     items = (1..12).toList(),
                     selected = hour,
@@ -346,7 +346,7 @@ fun TimePickerDropdownDialog(
                     startAtFirstItem = true
                 )
 
-                // Minute column (infinite scroll)
+                // Minute column
                 TimeColumn(
                     items = (0..59).toList(),
                     selected = minute,
@@ -404,10 +404,10 @@ fun <T> TimeColumn(
     onSelect: (T) -> Unit,
     startAtFirstItem: Boolean = false
 ) {
-    val repeatCount = 1000 // to simulate infinite scroll
+    val repeatCount = 1000
     val listSize = items.size
     val initialIndex = if (startAtFirstItem) {
-        repeatCount / 2 * listSize // first item in middle repetition
+        repeatCount / 2 * listSize
     } else {
         repeatCount / 2 * listSize + items.indexOf(selected)
     }

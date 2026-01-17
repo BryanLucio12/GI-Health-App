@@ -114,7 +114,7 @@ fun EnterPinScreen(navController: NavController, savedPin: String, loginSuccess:
             Spacer(modifier = Modifier.height(12.dp))
 
             TextButton(onClick = { navController.navigate("questionnaire_verify") }) {
-                Text("Forgot PIN?", color = Color.Blue)
+                Text("Forgot PIN?", color = Color.Gray)
             }
         }
     }
