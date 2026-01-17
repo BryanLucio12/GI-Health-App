@@ -2,10 +2,7 @@ package com.example.gihealth.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Fastfood
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MonitorWeight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -50,13 +47,13 @@ fun AddNewScreen(navController: NavHostController) {
             ) {
                 AddNewCard(
                     title = "Log Food",
-                    icon = Icons.Default.Fastfood,
+                    icon = Icons.Default.Dining,
                     backgroundColor = cardColor,
                     onClick = { navController.navigate("logFood") }
                 )
                 AddNewCard(
                     title = "Log Symptom",
-                    icon = Icons.Default.Favorite,
+                    icon = Icons.Default.Sick,
                     backgroundColor = cardColor,
                     onClick = { navController.navigate("logSymptom") }
                 )
@@ -71,7 +68,7 @@ fun AddNewScreen(navController: NavHostController) {
             ) {
                 AddNewCard(
                     title = "Add to Journal",
-                    icon = Icons.Default.Edit,
+                    icon = Icons.Default.AutoStories,
                     backgroundColor = cardColor,
                     onClick = { navController.navigate("journal") }
                 )

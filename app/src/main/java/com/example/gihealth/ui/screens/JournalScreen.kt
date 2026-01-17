@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -15,6 +16,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gihealth.data.JournalViewModel
 import com.example.gihealth.ui.theme.GIHealthTheme
 import androidx.compose.ui.platform.LocalContext
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -32,6 +35,9 @@ fun JournalScreen(){
     var journalText by remember { mutableStateOf("") }
     val journalEntries by journalViewModel.journalEntries.collectAsState()
 
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -48,17 +54,30 @@ fun JournalScreen(){
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Centered "Today"
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            TextButton(onClick = { selectedDate = selectedDate.minusDays(1) }) {
+                Text("<", style = MaterialTheme.typography.headlineSmall, color = Color.Gray)
+            }
+
+            Spacer(Modifier.width(6.dp))
+
             Text(
-                text = "Today",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
+                text = if (selectedDate == LocalDate.now())
+                    "Today (${selectedDate.format(dateFormatter)})"
+                else selectedDate.format(dateFormatter),
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Gray
             )
+
+            Spacer(Modifier.width(6.dp))
+
+            TextButton(onClick = { selectedDate = selectedDate.plusDays(1) }) {
+                Text(">", style = MaterialTheme.typography.headlineSmall, color = Color.Gray)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -82,7 +101,11 @@ fun JournalScreen(){
                     journalText = ""
                 }
             },
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.align(Alignment.End),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF0F9D58), // your green color
+                contentColor = Color.White // text color
+            )
         ) {
             Text("Save")
         }
