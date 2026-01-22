@@ -357,7 +357,7 @@ fun NavHostContainer(
         }
 
         composable("journal") {
-            JournalScreen()
+            JournalScreen(journalViewModel = journalViewModel)
         }
 
         composable("logSymptom") {

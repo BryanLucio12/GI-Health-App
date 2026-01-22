@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-//viewmodel for daily journal entry
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+// viewmodel for daily journal entry
 class JournalViewModel(application: Application) : AndroidViewModel(application) {
     private val journalDao = JournalDatabase.getDatabase(application).journalDao()
-
 
     private val _journalEntries = MutableStateFlow<List<JournalEntity>>(emptyList())
     val journalEntries: StateFlow<List<JournalEntity>> = _journalEntries
@@ -24,10 +27,13 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun addJournalEntry(text: String) {
-        val date = java.text.SimpleDateFormat("MMMM d, yyyy", java.util.Locale.getDefault())
-            .format(java.util.Date())
-        val entry = JournalEntity(date = date, entry = text)
+    fun addJournalEntry(text: String, date: LocalDate) {
+        val dateString = date.format(
+            DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault())
+        )
+
+        val entry = JournalEntity(date = dateString, entry = text)
+
         viewModelScope.launch {
             journalDao.insert(entry)
             fetchAllJournals() // refresh list
@@ -41,3 +47,4 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 }
+
