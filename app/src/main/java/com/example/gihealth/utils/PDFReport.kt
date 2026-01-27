@@ -1,5 +1,7 @@
 package com.example.gihealth.utils
 
 data class PDFReport(
-    val bowelMovementsPerDay: Int?
+    val bowelMovementsPerDay: Int?,
+    val avgAbdominalPain: Int?,
+    val flaresPastYear: Int?
 )
