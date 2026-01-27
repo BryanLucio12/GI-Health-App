@@ -21,6 +21,7 @@ import com.example.gihealth.data.SymptomEntity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import android.app.Application
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,8 +30,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.example.gihealth.data.SymptomDatabase
 import androidx.compose.foundation.lazy.items
-
-
+import androidx.compose.ui.platform.LocalContext
+import com.example.gihealth.ui.viewmodel.LogSymptomsViewModel
 
 
 class SymptomViewModel(application: Application) : AndroidViewModel(application) {
@@ -45,7 +46,7 @@ class SymptomViewModel(application: Application) : AndroidViewModel(application)
         observeSymptoms()
     }
 
-    //observe all symtoms in db and update stateflow
+
     private fun observeSymptoms() {
         viewModelScope.launch {
             symptomDao.getAllSymptoms().collectLatest { list ->
@@ -73,11 +74,13 @@ class SymptomViewModel(application: Application) : AndroidViewModel(application)
 @Composable
 fun SymptomScreen(
     navController: NavController,
-    vm: SymptomViewModel = viewModel()
-) {
+    vm: SymptomViewModel = viewModel(),
+){
     //get symptoms in viewmodel to display in UI
     val symptoms by vm.symptoms.collectAsState(initial=emptyList())
 
+    val activity = LocalContext.current as ComponentActivity
+    val logVm: LogSymptomsViewModel = viewModel(activity)
     var showAddDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -101,7 +104,7 @@ fun SymptomScreen(
             Spacer(Modifier.height(12.dp))
 
             Button(
-                onClick = { navController.navigate("logSymptom") },
+                onClick = { navController.navigate("select_symptoms") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
                 shape = RoundedCornerShape(25.dp),
                 modifier = Modifier
@@ -138,9 +141,8 @@ fun SymptomScreen(
             onDismiss = { showAddDialog = false },
             onAddSymptom = { newSymptom ->
                 if (newSymptom.isNotBlank()) {
-                    vm.addSymptom(name = newSymptom, severity = 0, timeLength = 0)
+                    logVm.addCustomSymptom(newSymptom)
                 }
-
                 showAddDialog = false
             }
         )
