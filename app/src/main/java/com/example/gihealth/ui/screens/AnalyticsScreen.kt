@@ -133,9 +133,11 @@ fun AnalyticsScreen(
                 }
                 Spacer(Modifier.height(8.dp))
 
+                val viewModel: SymptomViewModel = viewModel() // gets the ViewModel
+                val symptomsList by viewModel.symptoms.collectAsState()
                 // button to generate the pdf report
                 Button(
-                    onClick = { generatePdfReport(context) },
+                    onClick = { generatePdfReport(context, symptomsList) },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0F9D58)
                     ),

@@ -61,7 +61,7 @@ fun LogSymptomScreen(
         "Anorectal pain/itching",
         "Bloating/gas",
         "Blood in stool",
-        "Change in bowel habits",
+        "Bowel Movement",
         "Constipation",
         "Diarrhea",
         "Incontinence of stool",
@@ -237,7 +237,7 @@ fun SymptomLogCard(
             Slider(
                 value = rating,
                 onValueChange = onRatingChange,
-                valueRange = 0f..10f,
+                valueRange = 1f..10f,
                 steps = 9,
                 colors = SliderDefaults.colors(
                     thumbColor = sliderColor,
