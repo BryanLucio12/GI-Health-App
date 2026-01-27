@@ -83,7 +83,7 @@ fun AppNavigator() {
     val userInfo by userInfoViewModel.userInfo.observeAsState()
 
     // Show a loading screen while userInfo is null
-    if (userInfo == null) {
+    /*if (userInfo == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -93,7 +93,7 @@ fun AppNavigator() {
             Text(text = "Loading...")
         }
         return
-    }
+    }*/
     // if pin already created
     val hasPin = userInfo?.pin?.let { it != 0 } ?: false
     // if user has already completed setup name required
@@ -365,6 +365,14 @@ fun NavHostContainer(
                 navController = navController,
                 symptomViewModel = symptomViewModel
             )
+        }
+
+        composable("select_symptoms") {
+            SelectSymptomsScreen(navController = navController)
+        }
+
+        composable("rate_symptoms") {
+            RateSymptomsScreen(navController = navController)
         }
 
         composable("logWeight") {

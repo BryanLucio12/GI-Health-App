@@ -5,12 +5,18 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-
 //connecting Entity to the Dao
-@Database(entities = [SymptomEntity::class], version = 1)
+@Database(
+    entities = [
+        SymptomEntity::class,
+        CustomSymptomEntity::class
+    ],
+    version = 2
+)
 abstract class SymptomDatabase : RoomDatabase() {
 
     abstract fun symptomDao(): SymptomDao //give DAO
+    abstract fun customSymptomDao(): CustomSymptomDao
 
     companion object {
         @Volatile
@@ -23,7 +29,9 @@ abstract class SymptomDatabase : RoomDatabase() {
                     context.applicationContext,
                     SymptomDatabase::class.java,
                     "symptom_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

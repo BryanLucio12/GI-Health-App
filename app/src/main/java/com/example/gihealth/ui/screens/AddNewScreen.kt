@@ -55,7 +55,7 @@ fun AddNewScreen(navController: NavHostController) {
                     title = "Log Symptom",
                     icon = Icons.Default.Sick,
                     backgroundColor = cardColor,
-                    onClick = { navController.navigate("logSymptom") }
+                    onClick = { navController.navigate("select_symptoms") }
                 )
             }
 
