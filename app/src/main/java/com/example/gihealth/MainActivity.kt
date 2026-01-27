@@ -360,13 +360,6 @@ fun NavHostContainer(
             JournalScreen(journalViewModel = journalViewModel)
         }
 
-        composable("logSymptom") {
-            LogSymptomScreen(
-                navController = navController,
-                symptomViewModel = symptomViewModel
-            )
-        }
-
         composable("select_symptoms") {
             SelectSymptomsScreen(navController = navController)
         }
