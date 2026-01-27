@@ -23,6 +23,12 @@ fun generatePdfReport(
         textSize = 40f
     }
 
+    val hollowCirclePaint = Paint().apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 4f   // thickness of the outline
+        isAntiAlias = true
+    }
+
     // make page 1 of questionnaire
     val page1Bitmap = BitmapFactory.decodeStream(
         context.assets.open("Report_page_1.png")
@@ -40,12 +46,26 @@ fun generatePdfReport(
     // draw the page 1 background
     canvas1.drawBitmap(page1Bitmap, 0f, 0f, null)
 
+    // draw answers to QUESTION 1
     report.bowelMovementsPerDay?.let { avg ->
         val label = bowelMovementLabel(avg)
         val (x, y) = bowelMovementPositions[label]!!
         canvas1.drawText("✔", x, y, paint)
     }
 
+    // draw answers QUESTION 2
+    report.avgAbdominalPain?.let { pain ->
+        val x = abdominalPainPositionX[pain]!!
+        val y = 2100f
+        canvas1.drawCircle(x, y, 36f, hollowCirclePaint)
+    }
+
+    // answers QUESTION 3
+    report.flaresPastYear?.let { count ->
+        val label = flareCountLabel(count)
+        val (x, y) = flareCountPositions[label]!!
+        canvas1.drawText("✔", x, y, paint)
+    }
 
     pdf.finishPage(page1)
 
@@ -89,13 +109,45 @@ private fun bowelMovementLabel(value: Int): String =
         else -> "12+"
     }
 
-// the pairs are in x and y coords for the PDF pages
+// the pairs are in x and y coords for the PDF pages (question 1)
 // use these coords as reference for future questions, specifically x coords
 private val bowelMovementPositions = mapOf(
-    "0" to Pair(910f, 1750f),
-    "1-2" to Pair(910f, 1815f),
-    "3-5" to Pair(1310f, 1750f),
-    "7-9" to Pair(1310f, 1815f),
+    "0" to Pair(912f, 1750f),
+    "1-2" to Pair(912f, 1815f),
+    "3-5" to Pair(1312f, 1750f),
+    "7-9" to Pair(1312f, 1815f),
     "10-12" to Pair(1710f, 1750f),
     "12+" to Pair(1710f, 1815f)
+)
+
+private val abdominalPainPositionX = mapOf(
+    1 to 965f,
+    2 to 1065f,
+    3 to 1165f,
+    4 to 1270f,
+    5 to 1370f,
+    6 to 1470f,
+    7 to 1570f,
+    8 to 1670f,
+    9 to 1772f,
+    10 to 1872f
+)
+
+private fun flareCountLabel(count: Int): String =
+    when {
+        count == 0 -> "0"
+        count <= 2 -> "1-2"
+        count <= 5 -> "3-5"
+        count <= 9 -> "7-9"
+        count <= 12 -> "10-12"
+        else -> "12+"
+    }
+
+private val flareCountPositions = mapOf(
+    "0" to Pair(912f, 2710f),
+    "1-2" to Pair(912f, 2775f),
+    "3-5" to Pair(1312f, 2710f),
+    "7-9" to Pair(1312f, 2775f),
+    "10-12" to Pair(1710f, 2710f),
+    "12+" to Pair(1710f, 2775f)
 )
