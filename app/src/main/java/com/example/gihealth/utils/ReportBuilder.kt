@@ -10,7 +10,7 @@ class ReportBuilder {
 
         // question 1
         val bowelRows = symptoms.filter {
-            it.name == "Bowel Movements"
+            it.name == "Bowel Movement"
         }
 
         // q1 -  Compute average per day over the period
@@ -20,7 +20,7 @@ class ReportBuilder {
                 .average()
                 .roundToInt()
         } else {
-            null
+            0
         }
 
         // return PDF-ready model

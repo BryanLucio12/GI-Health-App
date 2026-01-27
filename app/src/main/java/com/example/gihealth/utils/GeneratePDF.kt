@@ -46,9 +46,6 @@ fun generatePdfReport(
         canvas1.drawText("✔", x, y, paint)
     }
 
-    // Note of how to make answers to the questionnaire
-    // val paint = Paint().apply { textSize = 40f }
-    // canvas1.drawText("User Answer", x, y, paint)
 
     pdf.finishPage(page1)
 
@@ -92,11 +89,13 @@ private fun bowelMovementLabel(value: Int): String =
         else -> "12+"
     }
 
+// the pairs are in x and y coords for the PDF pages
+// use these coords as reference for future questions, specifically x coords
 private val bowelMovementPositions = mapOf(
-    "0" to Pair(120f, 420f),
-    "1-2" to Pair(240f, 420f),
-    "3-5" to Pair(360f, 420f),
-    "7-9" to Pair(480f, 420f),
-    "10-12" to Pair(600f, 420f),
-    "12+" to Pair(720f, 420f)
+    "0" to Pair(910f, 1750f),
+    "1-2" to Pair(910f, 1815f),
+    "3-5" to Pair(1310f, 1750f),
+    "7-9" to Pair(1310f, 1815f),
+    "10-12" to Pair(1710f, 1750f),
+    "12+" to Pair(1710f, 1815f)
 )
