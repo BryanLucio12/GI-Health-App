@@ -33,37 +33,13 @@ import kotlin.math.roundToInt
 import com.example.gihealth.data.TopSymptomResults
 import com.example.gihealth.data.SymptomWithTrend
 
-// DUMMY VALUES WILL BE REMOVED LATER
-class AnalyticsViewModel : ViewModel() {
-    private val today = LocalDate.now()
-    private val startOfWeek = today.with(DayOfWeek.MONDAY)
 
-    // Base values
-    private val baseComfort = (4..8).random()
-    private val baseWeight = (150..180).random()   // still used only for mock digestive, not weight DB
-
-    // Digestive comfort mock data
-    val digestiveData: Map<String, Map<LocalDate, Int>> = mapOf(
-        "Today" to mapOf(today to baseComfort + (-1..1).random()),
-        "Yesterday" to mapOf(today.minusDays(1) to baseComfort + (-1..1).random()),
-        "This Week" to (0..6).associate {
-            startOfWeek.plusDays(it.toLong()) to (baseComfort + (-2..2).random()).coerceIn(1, 10)
-        },
-        "Last Week" to (0..6).associate {
-            startOfWeek.minusWeeks(1).plusDays(it.toLong()) to (baseComfort + (-2..2).random()).coerceIn(1, 10)
-        },
-        "This Month" to (0 until today.lengthOfMonth()).associate {
-            today.withDayOfMonth(it + 1) to (baseComfort + (-2..2).random()).coerceIn(1, 10)
-        }
-    )
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     onOpenCalendar: () -> Unit,
-    vm: CalendarViewModel,
-    analyticsVM: AnalyticsViewModel = viewModel()
+    vm: CalendarViewModel
 ) {
     val context = LocalContext.current
 
@@ -150,7 +126,7 @@ fun AnalyticsScreen(
             }
         }
 
-        item { DigestiveComfortCard(typeOfRange, analyticsVM) }
+        item { DigestiveComfortCard(typeOfRange = typeOfRange, symptoms = symptoms) }
 
         // UPDATED: pass real WellBeing entries to the weight tracker
         item { WeightTrackerCard(typeOfRange = typeOfRange, entries = wellBeingEntries) }
@@ -282,6 +258,24 @@ fun filterSymptomsForRange(
             .toLocalDate()
     }
 }
+
+fun computeDigestiveComfortForRange(
+    symptoms: List<SymptomEntity>,
+    range: String
+): Map<LocalDate, Int> {
+
+    val grouped = filterSymptomsForRange(symptoms, range)
+
+    // Convert daily symptom avg severity -> daily comfort (1–10)
+    return grouped.mapValues { (_, list) ->
+        val avgSeverity = list.map { it.severity }.average()
+
+        // Inverse of severity
+        val comfort = 10.0 - avgSeverity
+        comfort.coerceIn(1.0, 10.0).roundToInt()
+    }
+}
+
 
 @Composable
 fun SymptomSeverityGraph(
@@ -568,9 +562,11 @@ fun computeTopSymptomsWithTrend(
 }
 
 @Composable
-fun DigestiveComfortCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
+fun DigestiveComfortCard(typeOfRange: String, symptoms: List<SymptomEntity>) {
     val today = LocalDate.now()
-    val mockData = analyticsVM.digestiveData[typeOfRange] ?: emptyMap()
+    val comfortData = remember(symptoms, typeOfRange) {
+        computeDigestiveComfortForRange(symptoms, typeOfRange)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -585,9 +581,31 @@ fun DigestiveComfortCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
             Text("Digestive Comfort (1–10)", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
 
+            if (symptoms.isEmpty()) {
+                Text("No symptom logs available.")
+                return@Column
+            }
+
             if (typeOfRange == "Today" || typeOfRange == "Yesterday") {
                 val day = if (typeOfRange == "Today") today else today.minusDays(1)
-                val value = mockData[day] ?: 5
+                val value = comfortData[day]
+
+                if (value == null) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        Text(
+                            text = "No comfort data for ${if (typeOfRange == "Today") "today" else "yesterday"}.",
+                            color = Color.DarkGray
+                        )
+                    }
+                    return@Column
+                }
+
                 val color = when (value) {
                     in 1..3 -> Color(0xFFD32F2F)
                     in 4..6 -> Color(0xFFFFC107)
@@ -618,8 +636,13 @@ fun DigestiveComfortCard(typeOfRange: String, analyticsVM: AnalyticsViewModel) {
                     )
                 }
             } else {
+                if (comfortData.isEmpty()) {
+                    Text("No data available for selected range.")
+                    return@Column
+                }
+
                 DigestiveComfortGraph(
-                    data = mockData,
+                    data = comfortData,
                     typeOfRange = typeOfRange,
                     compactView = false
                 )
