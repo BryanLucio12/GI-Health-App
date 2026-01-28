@@ -86,6 +86,25 @@ fun generatePdfReport(
     // draw the page 2 background
     canvas2.drawBitmap(page2Bitmap, 0f, 0f, null)
 
+    // answer QUESTION 5
+    report.eatLessFrequency?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, eatLessY, paint)
+    }
+
+    // QUESTION 5 - Decline social engagements
+    report.declineSocialFrequency?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, declineSocialY, paint)
+    }
+
+    // QUESTION 5 - Avoid activities I enjoy
+    report.avoidActivitiesFrequency?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, avoidActivitiesY, paint)
+    }
+
+
     pdf.finishPage(page2)
 
     // save the file
@@ -151,3 +170,13 @@ private val flareCountPositions = mapOf(
     "10-12" to Pair(1710f, 2710f),
     "12+" to Pair(1710f, 2775f)
 )
+
+// Section 5 - Challenges (Page 2)
+private val challengeFrequencyX = mapOf(
+    2 to 1710f, // Often
+    1 to 1916f, // Sometimes
+    0 to 2220f  // Never
+)
+private const val eatLessY = 419f
+private const val declineSocialY = eatLessY + 63f
+private const val avoidActivitiesY = declineSocialY + 63f
