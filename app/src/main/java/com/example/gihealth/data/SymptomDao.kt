@@ -75,7 +75,7 @@ interface SymptomDao {
     //good and bad day with edge cases
     @Query("""
     SELECT 
-        DATE(timestamp / 1000, 'unixepoch') AS day,
+        date AS day,
         COUNT(*) AS totalSymptoms,
         MAX(severity) AS maxSeverity,
         AVG(severity) AS avgSeverity,

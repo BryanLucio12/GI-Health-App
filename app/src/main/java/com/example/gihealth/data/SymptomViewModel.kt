@@ -30,12 +30,13 @@ class SymptomViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 //add new symptom func
-    fun addSymptom(name: String, severity: Int, timeLength: Int) {
+    fun addSymptom(name: String, severity: Int, timeLength: Int, date: String, timestamp: Long= System.currentTimeMillis()) {
         val symptom = SymptomEntity(
             name = name,
             severity = severity,
-            timestamp = System.currentTimeMillis(),
-            timeLength = timeLength
+            timestamp = timestamp,
+            timeLength = timeLength,
+            date=date
         )
 
         viewModelScope.launch {
