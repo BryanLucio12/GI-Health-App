@@ -1,6 +1,8 @@
 package com.example.gihealth.utils
 
 import com.example.gihealth.data.*
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.math.roundToInt
 
 const val FLARE_SEVERITY_THRESHOLD = 3
@@ -39,12 +41,76 @@ class ReportBuilder {
         // QUESTION 3 - Compute number of flares
         val flaresPastYear = countFlaresPastYear(symptoms)
 
+        //Question 5 - Eat Less
+
+        val appetiteRows = symptoms.filter {
+            it.name == "Loss of appetite"
+        }
+        val eatLessFrequency = if (appetiteRows.isEmpty()){
+            0
+        } else {
+            val daysWithSymptom = appetiteRows.map { symptom ->
+                Instant.ofEpochMilli(symptom.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }.distinct().size
+            val ratio = daysWithSymptom /30.0
+            when{
+                ratio >= 0.5 -> 2
+                ratio > 0 -> 1
+                else -> 0
+            }
+        }
+
+        // QUESTION 5 - Decline social engagements
+        val fatigueRows = symptoms.filter {
+            it.name == "Fatigue"
+        }
+
+        val declineSocialFrequency = if (fatigueRows.isEmpty()) {
+            0
+        } else {
+            val daysWithSymptom = fatigueRows.map { symptom ->
+                Instant.ofEpochMilli(symptom.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }.distinct().size
+            val ratio = daysWithSymptom / 30.0
+            when {
+                ratio >= 0.5 -> 2
+                ratio > 0 -> 1
+                else -> 0
+            }
+        }
+
+        // QUESTION 5 - Avoid activities I enjoy
+        val painRows = symptoms.filter {
+            it.name == "Abdominal pain"
+        }
+        val avoidActivitiesFrequency = if (painRows.isEmpty()) {
+            0
+        } else {
+            val daysWithSymptom = painRows.map { symptom ->
+                Instant.ofEpochMilli(symptom.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }.distinct().size
+            val ratio = daysWithSymptom / 30.0
+            when {
+                ratio >= 0.5 -> 2
+                ratio > 0 -> 1
+                else -> 0
+            }
+        }
 
         // return PDF-ready model
         return PDFReport(
             bowelMovementsPerDay = avgBowelMovements,
             avgAbdominalPain = avgAbdominalPain,
-            flaresPastYear = flaresPastYear
+            flaresPastYear = flaresPastYear,
+            eatLessFrequency = eatLessFrequency,
+            declineSocialFrequency = declineSocialFrequency,
+            avoidActivitiesFrequency = avoidActivitiesFrequency
         )
     }
 
@@ -74,8 +140,8 @@ class ReportBuilder {
             }
 
         val symptomsByDay = flareSymptoms.groupBy { symptom ->
-            java.time.Instant.ofEpochMilli(symptom.timestamp)
-                .atZone(java.time.ZoneId.systemDefault())
+            Instant.ofEpochMilli(symptom.timestamp)
+                .atZone(ZoneId.systemDefault())
                 .toLocalDate()
         }
 
