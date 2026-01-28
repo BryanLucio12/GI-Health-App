@@ -56,11 +56,12 @@ class SymptomViewModel(application: Application) : AndroidViewModel(application)
     }
 
     //add new symptom
-    fun addSymptom(name: String, severity: Int, timeLength: Int) {
+    fun addSymptom(name: String, severity: Int, timeLength: Int, date: String) {
         val entity = SymptomEntity(
             name = name,
             severity = severity,
             timeLength = timeLength,
+            date=date,
             timestamp = System.currentTimeMillis()
         )
         viewModelScope.launch { symptomDao.insert(entity) }
@@ -190,9 +191,7 @@ fun AddSymptomDialog(
 
 @Composable
 fun SymptomCard(symptom: SymptomEntity, vm: SymptomViewModel) {
-    val date = java.text.SimpleDateFormat("MMM d, yyyy")
-        .format(java.util.Date(symptom.timestamp))
-
+    val date = symptom.date
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),

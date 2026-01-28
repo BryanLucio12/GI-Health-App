@@ -16,5 +16,6 @@ data class SymptomEntity(
     val name: String,
     val severity: Int,        //1-5
     val timestamp: Long,      //datetime when symptom logged
-    val timeLength: Int       //duration in hours
+    val timeLength: Int,      //duration in hours
+    val date: String
 )

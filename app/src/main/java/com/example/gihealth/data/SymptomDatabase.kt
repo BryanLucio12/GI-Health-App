@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
         SymptomEntity::class,
         CustomSymptomEntity::class
     ],
-    version = 2
+    version = 3
 )
 abstract class SymptomDatabase : RoomDatabase() {
 
