@@ -107,6 +107,44 @@ fun generatePdfReport(
 
     pdf.finishPage(page2)
 
+    // page 3 (page 1 of GI Alliance form)
+    val page3Bitmap = BitmapFactory.decodeStream(
+        context.assets.open("alliance_page_1.png")
+    )
+
+    val page3Info = PdfDocument.PageInfo.Builder(
+        page3Bitmap.width,
+        page3Bitmap.height,
+        3
+    ).create()
+
+    val page3 = pdf.startPage(page3Info)
+    val canvas3 = page3.canvas
+
+    // draw the page 3 background
+    canvas3.drawBitmap(page3Bitmap, 0f, 0f, null)
+
+    pdf.finishPage(page3)
+
+    // page 4 (page 2 of GI Alliance form)
+    val page4Bitmap = BitmapFactory.decodeStream(
+        context.assets.open("alliance_page_2.png")
+    )
+
+    val page4Info = PdfDocument.PageInfo.Builder(
+        page4Bitmap.width,
+        page4Bitmap.height,
+        4
+    ).create()
+
+    val page4 = pdf.startPage(page4Info)
+    val canvas4 = page4.canvas
+
+    // draw the page 3 background
+    canvas4.drawBitmap(page4Bitmap, 0f, 0f, null)
+
+    pdf.finishPage(page4)
+
     // save the file
     val file = File(context.filesDir, "Health_Report.pdf")
     FileOutputStream(file).use { out ->
