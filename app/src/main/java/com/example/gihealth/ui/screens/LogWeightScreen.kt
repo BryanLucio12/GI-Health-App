@@ -42,6 +42,10 @@ fun LogWeightScreen(navController: NavController) {
     var sleepNote by remember { mutableStateOf("") }
     var stressNote by remember { mutableStateOf("") }
 
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -63,6 +67,40 @@ fun LogWeightScreen(navController: NavController) {
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+
+
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = {
+                        selectedDate = selectedDate.minusDays(1)   // ◀ previous day
+                    }) {
+                        Text("<", fontSize = 22.sp, color = Color.Gray)
+                    }
+
+                    Spacer(Modifier.width(6.dp))
+
+                    Text(
+                        text = if (selectedDate == LocalDate.now())
+                            "Today (${selectedDate.format(dateFormatter)})"
+                        else selectedDate.format(dateFormatter),
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+
+                    Spacer(Modifier.width(6.dp))
+
+                    TextButton(onClick = {
+                        selectedDate = selectedDate.plusDays(1)    // ▶ next day
+                    }) {
+                        Text(">", fontSize = 22.sp, color = Color.Gray)
+                    }
+                }
+            }
 
             // weight input
             item {
@@ -155,6 +193,8 @@ fun LogWeightScreen(navController: NavController) {
                 Button(
                     onClick = {
                         if (weightError == null && weightText.isNotEmpty()) {
+                            val formattedDate =
+                                selectedDate.format(dateFormatter)
                             val entry = WellBeingEntity(
                                 timestamp = System.currentTimeMillis(),
                                 weight = weightText.toFloat(),
@@ -162,7 +202,8 @@ fun LogWeightScreen(navController: NavController) {
                                 sleepRating = sleepRating.toInt(),
                                 sleepNote = sleepNote,
                                 stressRating = stressRating.toInt(),
-                                stressNote = stressNote
+                                stressNote = stressNote,
+                                date= formattedDate
                             )
 
                             viewModel.insertEntry(entry)
