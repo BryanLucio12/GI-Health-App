@@ -2,19 +2,18 @@ package com.example.gihealth.utils
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
 import com.example.gihealth.data.*
-//import com.example.gihealth.utils.ReportBuilder
-
-// import used to make answers
-import android.graphics.Paint
+import com.example.gihealth.models.PdfQuestionnaireAnswers
 
 fun generatePdfReport(
     context: Context,
-    symptoms: List<SymptomEntity>
+    symptoms: List<SymptomEntity>,
+    answers: PdfQuestionnaireAnswers
 ) {
     val pdf = PdfDocument()
 
@@ -43,7 +42,6 @@ fun generatePdfReport(
     val page1 = pdf.startPage(page1Info)
     val canvas1 = page1.canvas
 
-    // draw the page 1 background
     canvas1.drawBitmap(page1Bitmap, 0f, 0f, null)
 
     // draw answers to QUESTION 1
@@ -83,26 +81,105 @@ fun generatePdfReport(
     val page2 = pdf.startPage(page2Info)
     val canvas2 = page2.canvas
 
-    // draw the page 2 background
     canvas2.drawBitmap(page2Bitmap, 0f, 0f, null)
 
-    // answer QUESTION 5
-    report.eatLessFrequency?.let { freq ->
+    answers.eatLess?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, eatLessY, paint)
     }
 
-    // QUESTION 5 - Decline social engagements
-    report.declineSocialFrequency?.let { freq ->
+    answers.declineSocial?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, declineSocialY, paint)
     }
 
-    // QUESTION 5 - Avoid activities I enjoy
-    report.avoidActivitiesFrequency?.let { freq ->
+    answers.avoidActivities?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, avoidActivitiesY, paint)
     }
+
+    answers.arriveLateLeaveEarly?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, arriveLateLeaveEarlyY, paint)
+    }
+
+    answers.missWorkOrSchool?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, missWorkOrSchoolY, paint)
+    }
+
+    answers.loseSexualDesire?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, loseSexualDesireY, paint)
+    }
+
+    answers.inBedAllOrMostOfDay?.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, InBedAllorMostOfDayY, paint)
+    }
+
+
+
+   answers.anxious?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1632f, 1254f, paint)
+    }
+
+    answers.depressed?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1632f,1130f , paint)
+    }
+
+    answers.frustrated?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1316f, paint)
+    }
+
+    answers.isolated?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1130f, paint)
+    }
+
+    answers.stressed?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1130f, paint)
+    }
+
+    answers.helpless?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1192f, paint)
+    }
+
+    answers.overwhelmed?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1192f, paint)
+    }
+
+    answers.angry?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1632f, 1192f, paint)
+    }
+
+    answers.sad?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1254f, paint)
+    }
+
+    answers.embarrassed?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1254f, paint)
+    }
+
+    answers.guilty?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1316f, paint)
+    }
+
+    answers.noneOfTheAbove?.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1378f, paint)
+    }
+
+    answers.appetite?.let { value ->
+        val x = appetiteX[value] ?: return@let
+        canvas2.drawText("✔", x, appetiteY, paint)
+    }
+
+
+    answers.question9a?.let {
+        if (it == 1) {
+            canvas2.drawText("✔", question9X, question9aY, paint)
+        }
+    }
+
 
 
     pdf.finishPage(page2)
@@ -128,8 +205,6 @@ private fun bowelMovementLabel(value: Int): String =
         else -> "12+"
     }
 
-// the pairs are in x and y coords for the PDF pages (question 1)
-// use these coords as reference for future questions, specifically x coords
 private val bowelMovementPositions = mapOf(
     "0" to Pair(912f, 1750f),
     "1-2" to Pair(912f, 1815f),
@@ -171,7 +246,7 @@ private val flareCountPositions = mapOf(
     "12+" to Pair(1710f, 2775f)
 )
 
-// Section 5 - Challenges (Page 2)
+// Section 5 – Challenges (Page 2)
 private val challengeFrequencyX = mapOf(
     2 to 1710f, // Often
     1 to 1916f, // Sometimes
@@ -180,3 +255,20 @@ private val challengeFrequencyX = mapOf(
 private const val eatLessY = 419f
 private const val declineSocialY = eatLessY + 63f
 private const val avoidActivitiesY = declineSocialY + 63f
+private const val arriveLateLeaveEarlyY = avoidActivitiesY + 63f
+private const val missWorkOrSchoolY = arriveLateLeaveEarlyY + 63f
+private const val loseSleepY = missWorkOrSchoolY + 62f
+private const val loseSexualDesireY = loseSleepY + 62f
+private const val InBedAllorMostOfDayY = loseSexualDesireY + 61f
+
+
+private val appetiteX = mapOf(
+    0 to 932f,
+    1 to 1256f,
+    2 to 1632f
+)
+
+private const val appetiteY = 1700f
+
+private const val question9X = 932f
+private const val question9aY = 1900f

@@ -1,5 +1,6 @@
 package com.example.gihealth
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +33,6 @@ import com.example.gihealth.ui.onboarding.QuestionnaireVerifyScreen
 import com.example.gihealth.ui.onboarding.SettingsScreen
 import com.example.gihealth.ui.onboarding.UserSetupScreen
 import com.example.gihealth.ui.screens.*
-import com.example.gihealth.ui.logroutes.LogFoodRoute
 import com.example.gihealth.ui.theme.GIHealthTheme
 import com.example.gihealth.utils.Constants
 import androidx.lifecycle.ViewModelProvider
@@ -45,11 +44,6 @@ import com.example.gihealth.data.FoodEntity
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.*
 
 
 class MainActivity : ComponentActivity() {
@@ -75,7 +69,7 @@ fun AppNavigator() {
     val userInfoViewModel: UserInfoViewModel =
         viewModel(
             factory = ViewModelProvider.AndroidViewModelFactory(
-                context.applicationContext as android.app.Application
+                context.applicationContext as Application
             )
         )
 
@@ -295,7 +289,7 @@ fun NavHostContainer(
     // shared JournalViewModel (same as in JournalScreen)
     val journalViewModel: JournalViewModel = viewModel(
         factory = ViewModelProvider.AndroidViewModelFactory(
-            context.applicationContext as android.app.Application
+            context.applicationContext as Application
         )
     )
 
@@ -375,7 +369,19 @@ fun NavHostContainer(
         composable("analytics") {
             AnalyticsScreen(
                 onOpenCalendar = { navController.navigate("calendar") },
-                vm = vm
+                vm = vm,
+                onGeneratePdf = {
+                    navController.navigate("pdf_questionnaire")
+                }
+            )
+        }
+
+        composable("pdf_questionnaire") {
+            val symptoms by symptomViewModel.symptoms.collectAsState()
+
+            UserPDFQuestionnaire(
+                symptoms = symptoms,
+                navController = navController
             )
         }
 

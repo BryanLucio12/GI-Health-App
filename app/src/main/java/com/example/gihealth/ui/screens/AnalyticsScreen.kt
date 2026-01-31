@@ -39,7 +39,8 @@ import com.example.gihealth.data.SymptomWithTrend
 @Composable
 fun AnalyticsScreen(
     onOpenCalendar: () -> Unit,
-    vm: CalendarViewModel
+    vm: CalendarViewModel,
+    onGeneratePdf: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -113,7 +114,7 @@ fun AnalyticsScreen(
                 val symptomsList by viewModel.symptoms.collectAsState()
                 // button to generate the pdf report
                 Button(
-                    onClick = { generatePdfReport(context, symptomsList) },
+                    onClick = {  onGeneratePdf() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0F9D58)
                     ),
