@@ -32,6 +32,9 @@ fun generatePdfReport(
     val page1Bitmap = BitmapFactory.decodeStream(
         context.assets.open("Report_page_1.png")
     )
+    //saving info for pages 3 and 4
+    val referencePageWidth = page1Bitmap.width
+    val referencePageHeight = page1Bitmap.height
 
     val page1Info = PdfDocument.PageInfo.Builder(
         page1Bitmap.width,
@@ -183,6 +186,70 @@ fun generatePdfReport(
 
 
     pdf.finishPage(page2)
+
+
+
+
+    // page 3 (page 1 of GI Alliance form)
+    val page3Bitmap = BitmapFactory.decodeStream(
+        context.assets.open("alliance_page_1.png")
+    )
+
+    val page3Info = PdfDocument.PageInfo.Builder(
+        referencePageWidth,
+        referencePageHeight,
+        3
+    ).create()
+
+    val page3 = pdf.startPage(page3Info)
+    val canvas3 = page3.canvas
+
+    val scaleFactor = 1.4f
+    val offsetX3 = (referencePageWidth - page3Bitmap.width*scaleFactor) / 2f
+    val offsetY3 = (referencePageHeight - page3Bitmap.height*scaleFactor) / 2f
+    canvas3.drawBitmap(page3Bitmap, offsetX3, offsetY3, null)
+
+    canvas3.save()                     // save current canvas state
+    canvas3.scale(scaleFactor, scaleFactor)
+    canvas3.drawBitmap(page3Bitmap, offsetX3 / scaleFactor, offsetY3 / scaleFactor, null)
+    canvas3.restore()
+    pdf.finishPage(page3)
+
+
+
+
+
+
+    // page 4 (page 2 of GI Alliance form)
+    val page4Bitmap = BitmapFactory.decodeStream(
+        context.assets.open("alliance_page_2.png")
+    )
+
+    val page4Info = PdfDocument.PageInfo.Builder(
+        referencePageWidth,
+        referencePageHeight,
+        4
+    ).create()
+
+    val page4 = pdf.startPage(page4Info)
+    val canvas4 = page4.canvas
+
+    // center samller bitmap of page 4 inside full size pdf page of 1 and 2
+
+    val offsetX4 = (referencePageWidth - page4Bitmap.width*scaleFactor) / 2f
+    val offsetY4 = (referencePageHeight - page4Bitmap.height*scaleFactor) / 2f
+    canvas4.drawBitmap(page3Bitmap, offsetX4, offsetY4, null)
+
+    canvas4.save()                     // save current canvas state
+    canvas4.scale(scaleFactor, scaleFactor)
+    canvas4.drawBitmap(page4Bitmap, offsetX4 / scaleFactor, offsetY4 / scaleFactor, null)
+    canvas4.restore()
+
+    pdf.finishPage(page4)
+
+
+
+
 
     // save the file
     val file = File(context.filesDir, "Health_Report.pdf")
