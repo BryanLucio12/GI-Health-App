@@ -170,10 +170,12 @@ fun generatePdfReport(
         canvas3.drawText("✔", x, y, paint)
     }
 
-
-
     canvas3.restore()
     pdf.finishPage(page3)
+
+
+
+
 
 
     // page 4 (page 2 of GI Alliance form)
@@ -194,13 +196,21 @@ fun generatePdfReport(
 
     val offsetX4 = (referencePageWidth - page4Bitmap.width*scaleFactor) / 2f
     val offsetY4 = (referencePageHeight - page4Bitmap.height*scaleFactor) / 2f
-    canvas4.drawBitmap(page3Bitmap, offsetX4, offsetY4, null)
+    canvas4.drawBitmap(page4Bitmap, offsetX4, offsetY4, null)
 
     canvas4.save()                     // save current canvas state
     canvas4.scale(scaleFactor, scaleFactor)
     canvas4.drawBitmap(page4Bitmap, offsetX4 / scaleFactor, offsetY4 / scaleFactor, null)
-    canvas4.restore()
+    symptoms.forEach { symptom ->
+        val key = symptom.name.trim() // match keys in ALLIANCE_PAGE4_SYMPTOM_POSITIONS
+        val pos = ALLIANCE_PAGE4_SYMPTOM_POSITIONS[key]
+        if (pos != null) {
+            val (x, y) = pos
+            canvas4.drawText("✔", x*scaleFactor, y*scaleFactor, paint)
+        }
+    }
 
+    canvas4.restore()
     pdf.finishPage(page4)
 
 
@@ -319,103 +329,80 @@ private fun q1AllianceWeekly(avg: Double): String {
 
 private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
     // Gastrointestinal
-    "Abdominal Pain" to Pair(180f, 420f),
-    "Anorectal Pain/ Itching" to Pair(180f, 435f),
-    "Bloating/Gas" to Pair(180f, 455f),
-    "Blood In Stool" to Pair(180f, 475f),
-    "Change In Bowel Habits" to Pair(180f, 495f),
-    "Constipation" to Pair(180f, 515f),
-    "Diarrhea" to Pair(180f, 535f),
-    "Incontinence Of Stool" to Pair(180f, 555f),
-    "Heartburn/Reflux" to Pair(180f, 575f),
-    "Difficulty Swallowing" to Pair(180f, 595f),
-    "Nausea" to Pair(180f, 615f),
-    "Vomiting" to Pair(180f, 635f),
-    "Black Tarry Stools" to Pair(180f, 655f),
-    "None" to Pair(180f, 675f),
+    "Abdominal pain" to Pair(225f, 240f),
+    "Anorectal pain/itching" to Pair(225f, 270f),
+    "Bloating/gas" to Pair(225f, 290f),
+    "Blood in stool" to Pair(225f, 310f),
+    "Bowel Movement" to Pair(225f, 330f),
+    "Constipation" to Pair(225f, 350f),
+    "Diarrhea" to Pair(225f, 370f),
+    "Incontinence of stool" to Pair(225f, 390f),
+    "Heartburn/reflux" to Pair(225f, 410f),
+    "Difficulty swallowing" to Pair(225f, 430f),
+    "Nausea" to Pair(225f, 450f),
+    "Vomiting" to Pair(225f, 470f),
+    "Black tarry stools" to Pair(225f, 530f),
 
     // Genitourinary
-    "Dark Urine" to Pair(180f, 695f),
-    "Heavy Menstruation" to Pair(180f, 715f),
-    "Pregnancy" to Pair(180f, 735f),
-    "Frequent Urination" to Pair(180f, 755f),
-    "Blood In Urine" to Pair(180f, 775f),
-    "None" to Pair(180f, 795f),
+    "Dark urine" to Pair(225f, 695f),
+    "Heavy menstruation" to Pair(225f, 715f),
+    "Pregnancy" to Pair(225f, 735f),
+    "Frequent urination" to Pair(225f, 755f),
+    "Blood in urine" to Pair(225f, 775f),
 
     // Integumentary
-    "Itching" to Pair(180f, 815f),
-    "Jaundice" to Pair(180f, 835f),
-    "Rashes" to Pair(180f, 855f),
-    "None" to Pair(180f, 875f),
+    "Itching" to Pair(225f, 815f),
+    "Jaundice" to Pair(225f, 835f),
+    "Rashes" to Pair(225f, 855f),
 
     // Neurological
-    "Frequent Headaches" to Pair(720f, 420f),
-    "Memory Loss/Confusion" to Pair(720f, 440f),
-    "Numbness Or Tingling" to Pair(720f, 460f),
-    "None" to Pair(720f, 480f),
+    "Frequent headaches" to Pair(720f, 420f),
+    "Memory loss/confusion" to Pair(720f, 440f),
+    "Numbness or tingling" to Pair(720f, 460f),
 
     // Endocrine
-    "Cold Intolerance" to Pair(720f, 500f),
-    "Excessive Thirst" to Pair(720f, 520f),
-    "None" to Pair(720f, 540f),
+    "Cold intolerance" to Pair(720f, 500f),
+    "Excessive thirst" to Pair(720f, 520f),
 
     // Constitutional
     "Fatigue" to Pair(720f, 560f),
     "Fever" to Pair(720f, 580f),
-    "Loss Of Appetite" to Pair(720f, 600f),
-    "Night Sweats" to Pair(720f, 620f),
-    "Weight Gain" to Pair(720f, 640f),
-    "Weight Loss" to Pair(720f, 660f),
-    "None" to Pair(720f, 680f),
+    "Loss of appetite" to Pair(720f, 600f),
+    "Night sweats" to Pair(720f, 620f),
+    "Weight gain" to Pair(720f, 640f),
+    "Weight loss" to Pair(720f, 660f),
 
     // Psychiatric
     "Anxiety" to Pair(720f, 700f),
     "Depression" to Pair(720f, 720f),
-    "None" to Pair(720f, 740f),
 
     // ENT
-    "Double Vision" to Pair(720f, 760f),
-    "Eye Irritation" to Pair(720f, 780f),
-    "Eye Pain" to Pair(720f, 800f),
+    "Double vision" to Pair(720f, 760f),
+    "Eye irritation" to Pair(720f, 780f),
+    "Eye pain" to Pair(720f, 800f),
     "Eye Redness" to Pair(720f, 820f),
-    "Sore Throat" to Pair(720f, 840f),
+    "Sore throat" to Pair(720f, 840f),
     "Hoarseness" to Pair(720f, 860f),
-    "Mouth Sores" to Pair(720f, 880f),
-    "None" to Pair(720f, 900f),
+    "Mouth sores" to Pair(720f, 880f),
 
     // Hematologic/Lymphatic
-    "Easy Bruising" to Pair(1260f, 420f),
-    "Prolonged Bleeding" to Pair(1260f, 440f),
-    "None" to Pair(1260f, 460f),
+    "Easy bruising" to Pair(1260f, 420f),
+    "Prolonged bleeding" to Pair(1260f, 440f),
 
     // Musculoskeletal
-    "Back Pain" to Pair(1260f, 480f),
-    "Joint Pain" to Pair(1260f, 500f),
-    "None" to Pair(1260f, 520f),
+    "Back pain" to Pair(1260f, 480f),
+    "Joint pain" to Pair(1260f, 500f),
 
     // Respiratory
-    "Frequent Cough" to Pair(1260f, 540f),
+    "Frequent cough" to Pair(1260f, 540f),
     "Snoring" to Pair(1260f, 560f),
-    "Sleep Apnea" to Pair(1260f, 580f),
+    "Sleep apnea" to Pair(1260f, 580f),
     "Wheezing" to Pair(1260f, 600f),
-    "Shortness Of Breath" to Pair(1260f, 620f),
-    "None" to Pair(1260f, 640f),
+    "Shortness of breath" to Pair(1260f, 620f),
 
     // Allergies
-    "Allergies" to Pair(1260f, 660f),
-    "None" to Pair(1260f, 680f)
+    "Allergies" to Pair(1260f, 660f)
 )
-
-
-
-
-
-
-
-
-
-
-
 
 
 
