@@ -7,6 +7,7 @@ import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
 import com.example.gihealth.data.*
+import kotlin.math.roundToInt
 //import com.example.gihealth.utils.ReportBuilder
 
 // import used to make answers
@@ -14,7 +15,10 @@ import android.graphics.Paint
 
 fun generatePdfReport(
     context: Context,
-    symptoms: List<SymptomEntity>
+    symptoms: List<SymptomEntity>,
+    userInfo: UserInfoEntity? = null,
+    todayStressRating: Int? = null,
+    weeklyAvgStressRating: Double? = null
 ) {
     val pdf = PdfDocument()
 
@@ -28,6 +32,15 @@ fun generatePdfReport(
         strokeWidth = 4f   // thickness of the outline
         isAntiAlias = true
     }
+
+    // Used for Alliance header text
+    val headerPaint = Paint().apply {
+        textSize = 28f
+        isAntiAlias = true
+        color = android.graphics.Color.BLACK
+    }
+
+    val tempDob = "08/11/2026"
 
     // make page 1 of questionnaire
     val page1Bitmap = BitmapFactory.decodeStream(
@@ -110,37 +123,57 @@ fun generatePdfReport(
 
     pdf.finishPage(page2)
 
-
-
-
     // page 3 (page 1 of GI Alliance form)
     val page3Bitmap = BitmapFactory.decodeStream(
         context.assets.open("alliance_page_1.png")
     )
 
-    val page3Info = PdfDocument.PageInfo.Builder(
-        referencePageWidth,
-        referencePageHeight,
-        3
-    ).create()
+    val page3 = pdf.startPage(
+        PdfDocument.PageInfo.Builder(
+            referencePageWidth,
+            referencePageHeight,
+            3
+        ).create()
+    )
 
-    val page3 = pdf.startPage(page3Info)
     val canvas3 = page3.canvas
 
     val scaleFactor = 1.4f
-    val offsetX3 = (referencePageWidth - page3Bitmap.width*scaleFactor) / 2f
-    val offsetY3 = (referencePageHeight - page3Bitmap.height*scaleFactor) / 2f
-    canvas3.drawBitmap(page3Bitmap, offsetX3, offsetY3, null)
+    val offsetX3 = (referencePageWidth - page3Bitmap.width * scaleFactor) / 2f
+    val offsetY3 = (referencePageHeight - page3Bitmap.height * scaleFactor) / 2f
 
-    canvas3.save()                     // save current canvas state
+    canvas3.save()
+    canvas3.translate(offsetX3, offsetY3)
     canvas3.scale(scaleFactor, scaleFactor)
-    canvas3.drawBitmap(page3Bitmap, offsetX3 / scaleFactor, offsetY3 / scaleFactor, null)
+
+    canvas3.drawBitmap(page3Bitmap, 0f, 0f, null)
+
+    val name = userInfo?.name?.trim().orEmpty()
+    if (name.isNotBlank()) {
+        canvas3.drawText(name, ALLIANCE_NAME_X, ALLIANCE_NAME_Y, headerPaint)
+    }
+
+    canvas3.drawText(
+        tempDob,
+        ALLIANCE_DOB_X,
+        ALLIANCE_DOB_Y,
+        headerPaint
+    )
+    todayStressRating?.let { stress ->
+        val option = q1AllianceToday(stress)
+        val (x, y) = ALLIANCE_TODAY_POSITIONS[option] ?: return@let
+        canvas3.drawText("✔", x, y, paint)
+    }
+    weeklyAvgStressRating?.let { avg ->
+        val option = q1AllianceWeekly(avg)
+        val (x, y) = ALLIANCE_WEEKLY_POSITIONS[option] ?: return@let
+        canvas3.drawText("✔", x, y, paint)
+    }
+
+
+
     canvas3.restore()
     pdf.finishPage(page3)
-
-
-
-
 
 
     // page 4 (page 2 of GI Alliance form)
@@ -244,6 +277,48 @@ private val challengeFrequencyX = mapOf(
     1 to 1916f, // Sometimes
     0 to 2220f  // Never
 )
+
+
+private fun q1AllianceToday(stressRating: Int): String {
+    val s = stressRating.coerceIn(1, 10)
+    return when (s) {
+        1, 2 -> "very well"
+        3, 4 -> "slightly below par"
+        5, 6 -> "poor"
+        7, 8 -> "very poor"
+        else -> "terrible" // 9-10
+    }
+}
+
+private val ALLIANCE_TODAY_POSITIONS = mapOf(
+    "very well" to Pair(267f, 390f),
+    "slightly below par" to Pair(267f, 435f),
+    "poor" to Pair(267f, 480f),
+    "very poor" to Pair(267f, 522f),
+    "terrible" to Pair(267f, 567f)
+)
+private val ALLIANCE_WEEKLY_POSITIONS = mapOf(
+    "very well" to Pair(1005f, 390f),
+    "slightly below par" to Pair(1005f, 435f),
+    "poor" to Pair(1005f, 480f),
+    "very poor" to Pair(1005f, 522f),
+    "terrible" to Pair(1005f, 567f)
+)
+private fun q1AllianceWeekly(avg: Double): String {
+    val a = avg.coerceIn(1.0, 10.0)
+    return when {
+        a < 2.5 -> "very well"
+        a < 4.5 -> "slightly below par"
+        a < 6.5 -> "poor"
+        a < 8.5 -> "very poor"
+        else -> "terrible"
+    }
+}
+
 private const val eatLessY = 419f
 private const val declineSocialY = eatLessY + 63f
 private const val avoidActivitiesY = declineSocialY + 63f
+private const val ALLIANCE_NAME_X = 395f
+private const val ALLIANCE_NAME_Y = 290f
+private const val ALLIANCE_DOB_X = 1200f
+private const val ALLIANCE_DOB_Y = 290f

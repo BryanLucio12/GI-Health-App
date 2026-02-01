@@ -193,23 +193,32 @@ fun LogWeightScreen(navController: NavController) {
                 Button(
                     onClick = {
                         if (weightError == null && weightText.isNotEmpty()) {
-                            val formattedDate =
-                                selectedDate.format(dateFormatter)
+                            val formattedDate = selectedDate.format(dateFormatter)
+
+                            val zone = java.time.ZoneId.systemDefault()
+                            val nowTime = java.time.LocalTime.now()
+
                             val entry = WellBeingEntity(
-                                timestamp = System.currentTimeMillis(),
+                                timestamp = selectedDate
+                                    .atTime(nowTime)
+                                    .atZone(zone)
+                                    .toInstant()
+                                    .toEpochMilli(),
                                 weight = weightText.toFloat(),
                                 unit = selectedUnit,
                                 sleepRating = sleepRating.toInt(),
                                 sleepNote = sleepNote,
                                 stressRating = stressRating.toInt(),
                                 stressNote = stressNote,
-                                date= formattedDate
+                                date = formattedDate
                             )
 
                             viewModel.insertEntry(entry)
                             navController.popBackStack()
                         }
-                    },
+                    }
+
+                    ,
                     enabled = weightError == null && weightText.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
