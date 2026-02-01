@@ -304,6 +304,8 @@ private val ALLIANCE_WEEKLY_POSITIONS = mapOf(
     "very poor" to Pair(1005f, 522f),
     "terrible" to Pair(1005f, 567f)
 )
+
+
 private fun q1AllianceWeekly(avg: Double): String {
     val a = avg.coerceIn(1.0, 10.0)
     return when {
@@ -314,6 +316,110 @@ private fun q1AllianceWeekly(avg: Double): String {
         else -> "terrible"
     }
 }
+
+private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
+    // Gastrointestinal
+    "Abdominal Pain" to Pair(180f, 420f),
+    "Anorectal Pain/ Itching" to Pair(180f, 435f),
+    "Bloating/Gas" to Pair(180f, 455f),
+    "Blood In Stool" to Pair(180f, 475f),
+    "Change In Bowel Habits" to Pair(180f, 495f),
+    "Constipation" to Pair(180f, 515f),
+    "Diarrhea" to Pair(180f, 535f),
+    "Incontinence Of Stool" to Pair(180f, 555f),
+    "Heartburn/Reflux" to Pair(180f, 575f),
+    "Difficulty Swallowing" to Pair(180f, 595f),
+    "Nausea" to Pair(180f, 615f),
+    "Vomiting" to Pair(180f, 635f),
+    "Black Tarry Stools" to Pair(180f, 655f),
+    "None" to Pair(180f, 675f),
+
+    // Genitourinary
+    "Dark Urine" to Pair(180f, 695f),
+    "Heavy Menstruation" to Pair(180f, 715f),
+    "Pregnancy" to Pair(180f, 735f),
+    "Frequent Urination" to Pair(180f, 755f),
+    "Blood In Urine" to Pair(180f, 775f),
+    "None" to Pair(180f, 795f),
+
+    // Integumentary
+    "Itching" to Pair(180f, 815f),
+    "Jaundice" to Pair(180f, 835f),
+    "Rashes" to Pair(180f, 855f),
+    "None" to Pair(180f, 875f),
+
+    // Neurological
+    "Frequent Headaches" to Pair(720f, 420f),
+    "Memory Loss/Confusion" to Pair(720f, 440f),
+    "Numbness Or Tingling" to Pair(720f, 460f),
+    "None" to Pair(720f, 480f),
+
+    // Endocrine
+    "Cold Intolerance" to Pair(720f, 500f),
+    "Excessive Thirst" to Pair(720f, 520f),
+    "None" to Pair(720f, 540f),
+
+    // Constitutional
+    "Fatigue" to Pair(720f, 560f),
+    "Fever" to Pair(720f, 580f),
+    "Loss Of Appetite" to Pair(720f, 600f),
+    "Night Sweats" to Pair(720f, 620f),
+    "Weight Gain" to Pair(720f, 640f),
+    "Weight Loss" to Pair(720f, 660f),
+    "None" to Pair(720f, 680f),
+
+    // Psychiatric
+    "Anxiety" to Pair(720f, 700f),
+    "Depression" to Pair(720f, 720f),
+    "None" to Pair(720f, 740f),
+
+    // ENT
+    "Double Vision" to Pair(720f, 760f),
+    "Eye Irritation" to Pair(720f, 780f),
+    "Eye Pain" to Pair(720f, 800f),
+    "Eye Redness" to Pair(720f, 820f),
+    "Sore Throat" to Pair(720f, 840f),
+    "Hoarseness" to Pair(720f, 860f),
+    "Mouth Sores" to Pair(720f, 880f),
+    "None" to Pair(720f, 900f),
+
+    // Hematologic/Lymphatic
+    "Easy Bruising" to Pair(1260f, 420f),
+    "Prolonged Bleeding" to Pair(1260f, 440f),
+    "None" to Pair(1260f, 460f),
+
+    // Musculoskeletal
+    "Back Pain" to Pair(1260f, 480f),
+    "Joint Pain" to Pair(1260f, 500f),
+    "None" to Pair(1260f, 520f),
+
+    // Respiratory
+    "Frequent Cough" to Pair(1260f, 540f),
+    "Snoring" to Pair(1260f, 560f),
+    "Sleep Apnea" to Pair(1260f, 580f),
+    "Wheezing" to Pair(1260f, 600f),
+    "Shortness Of Breath" to Pair(1260f, 620f),
+    "None" to Pair(1260f, 640f),
+
+    // Allergies
+    "Allergies" to Pair(1260f, 660f),
+    "None" to Pair(1260f, 680f)
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 private const val eatLessY = 419f
 private const val declineSocialY = eatLessY + 63f
