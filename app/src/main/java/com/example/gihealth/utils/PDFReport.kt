@@ -4,7 +4,8 @@ data class PDFReport(
     val bowelMovementsPerDay: Int?,
     val avgAbdominalPain: Int?,
     val flaresPastYear: Int?,
-    val eatLessFrequency: Int?,
-    val declineSocialFrequency: Int?,
-    val avoidActivitiesFrequency: Int?
+    val rectalBleedingFrequency: Int?,
+    val nauseaChange: Int?,
+    val weightChange: Int?,
+    val weightDeltaLbs: Int?
 )

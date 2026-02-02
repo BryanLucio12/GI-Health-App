@@ -6,9 +6,12 @@ import android.graphics.pdf.PdfDocument
 import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
+import com.example.gihealth.models.PdfQuestionnaireAnswers
 import com.example.gihealth.data.*
 import kotlin.math.roundToInt
 //import com.example.gihealth.utils.ReportBuilder
+
+
 
 // import used to make answers
 import android.graphics.Paint
@@ -16,6 +19,7 @@ import android.graphics.Paint
 fun generatePdfReport(
     context: Context,
     symptoms: List<SymptomEntity>,
+    answers: PdfQuestionnaireAnswers,
     userInfo: UserInfoEntity? = null,
     todayStressRating: Int? = null,
     weeklyAvgStressRating: Double? = null,
@@ -45,6 +49,7 @@ fun generatePdfReport(
     }
 
     val tempDob = "08/11/2026"
+
 
     // make page 1 of questionnaire
     val page1Bitmap = BitmapFactory.decodeStream(
@@ -87,6 +92,19 @@ fun generatePdfReport(
         canvas1.drawText("✔", x, y, paint)
     }
 
+    report.rectalBleedingFrequency?.let { value ->
+
+        val (x, y) = when (value) {
+            0 -> RECTAL_X_LEFT  to RECTAL_TRACE_Y
+            1 -> RECTAL_X_LEFT  to RECTAL_NEVER_Y
+            2 -> RECTAL_X_RIGHT to RECTAL_OCCASIONAL_Y
+            3 -> RECTAL_X_RIGHT to RECTAL_USUAL_Y
+            else -> return@let
+        }
+
+        canvas1.drawText("✔", x, y, paint)
+    }
+
     pdf.finishPage(page1)
 
     // draw page 2
@@ -106,26 +124,200 @@ fun generatePdfReport(
     // draw the page 2 background
     canvas2.drawBitmap(page2Bitmap, 0f, 0f, null)
 
-    // answer QUESTION 5
-    report.eatLessFrequency?.let { freq ->
+    answers.eatLess.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, eatLessY, paint)
     }
 
-    // QUESTION 5 - Decline social engagements
-    report.declineSocialFrequency?.let { freq ->
+    answers.declineSocial.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, declineSocialY, paint)
     }
 
-    // QUESTION 5 - Avoid activities I enjoy
-    report.avoidActivitiesFrequency?.let { freq ->
+    answers.avoidActivities.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, avoidActivitiesY, paint)
     }
 
+    answers.arriveLateLeaveEarly.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, arriveLateLeaveEarlyY, paint)
+    }
+
+    answers.missWorkOrSchool.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, missWorkOrSchoolY, paint)
+    }
+
+    answers.loseSexualDesire.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, loseSexualDesireY, paint)
+    }
+
+    answers.inBedAllOrMostOfDay.let { freq ->
+        val x = challengeFrequencyX[freq] ?: return@let
+        canvas2.drawText("✔", x, InBedAllorMostOfDayY, paint)
+    }
+
+
+
+   answers.anxious.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1632f, 1254f, paint)
+    }
+
+    answers.depressed.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1632f,1130f , paint)
+    }
+
+    answers.frustrated.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1316f, paint)
+    }
+
+    answers.isolated.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1130f, paint)
+    }
+
+    answers.stressed.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1130f, paint)
+    }
+
+    answers.helpless.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1192f, paint)
+    }
+
+    answers.overwhelmed.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1192f, paint)
+    }
+
+    answers.angry.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1632f, 1192f, paint)
+    }
+
+    answers.sad.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1254f, paint)
+    }
+
+    answers.embarrassed.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1254f, paint)
+    }
+
+    answers.guilty.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 1256f, 1316f, paint)
+    }
+
+    answers.noneOfTheAbove.takeIf { it == 1 }?.let {
+        canvas2.drawText("✔", 932f, 1378f, paint)
+    }
+
+    answers.appetite.let { value ->
+        val x = appetiteX[value] ?: return@let
+        canvas2.drawText("✔", x, appetiteY, paint)
+    }
+
+    report.nauseaChange?.let { value ->
+        val x = NAUSEA_X[value] ?: return@let
+        canvas1.drawText("✔", x, NAUSEA_Y, paint)
+    }
+
+    report.weightChange?.let { value ->
+        val x = appetiteX[value] ?: return@let
+        canvas2.drawText("✔", x, WEIGHT_Y, paint)
+    }
+
+
+    report.weightChange
+        ?.takeIf { it != 2 } // not "Stayed the Same"
+        ?.let {
+            report.weightDeltaLbs?.let { lbs ->
+                canvas2.drawText(
+                    lbs.toString(),
+                    WEIGHT_LBS_X,
+                    WEIGHT_LBS_Y,
+                    Paint(paint).apply { textSize = 36f }
+                )
+            }
+        }
+
+
+    if (hasRecentSymptom(symptoms, setOf("Joint pain"))) {
+        canvas1.drawText("✔", COMPLICATION_COL1_X, JOINT_PAIN_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Rashes", "Itching"))) {
+        canvas1.drawText("✔", COMPLICATION_COL1_X, SKIN_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Eye pain", "Eye irritation", "Eye Redness"))) {
+        canvas1.drawText("✔", COMPLICATION_COL2_X, EYE_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Jaundice"))) {
+        canvas1.drawText("✔", COMPLICATION_COL2_X, LIVER_ISSUES_Y, paint)
+    }
+
+
+    if (hasRecentSymptom(symptoms, setOf("Blood in urine", "Dark urine"))) {
+        canvas1.drawText("✔", COMPLICATION_COL3_X, KIDNEY_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Anorectal pain/itching", "Blood in stool"))) {
+        canvas1.drawText("✔", COMPLICATION_COL3_X, RECTAL_ISSUES_Y, paint)
+    }
+
+    answers.question9a?.let { value ->
+        val checkboxY = when (value) {
+            0 -> QUESTION9_IMPROVED_Y
+            1 -> QUESTION9_WORSE_Y
+            2 -> QUESTION9_SAME_Y
+            else -> return@let
+        }
+
+        // Draw checkmark
+        canvas2.drawText("✔", QUESTION9_X, checkboxY, paint)
+
+        // Draw explanation text ONLY for Improved or Worse
+        val explanationText = when (value) {
+            0 -> answers.question9b
+            1 -> answers.question9c
+            else -> null
+        }
+
+        explanationText
+            ?.takeIf { it.isNotBlank() }
+            ?.let { text ->
+                drawMultilineText(
+                    canvas = canvas2,
+                    text = text,
+                    startX = QUESTION9_TEXT_X,
+                    startY = checkboxY + 50f,
+                    paint = Paint(paint).apply { textSize = 32f },
+                    maxWidth = 900f,
+                    lineSpacing = 42f
+                )
+            }
+    }
+
+    answers.question10a
+        ?.takeIf { it.isNotBlank() }
+        ?.let { text ->
+            drawMultilineText(
+                canvas = canvas2,
+                text = text,
+                startX = QUESTION10_TEXT_X,
+                startY = QUESTION10_TEXT_Y,
+                paint = Paint(paint).apply { textSize = 34f },
+                maxWidth = QUESTION10_MAX_WIDTH,
+                lineSpacing = 44f
+            )
+        }
+
+
+
 
     pdf.finishPage(page2)
+
+
+
 
     // page 3 (page 1 of GI Alliance form)
     val page3Bitmap = BitmapFactory.decodeStream(
@@ -196,10 +388,6 @@ fun generatePdfReport(
     pdf.finishPage(page3)
 
 
-
-
-
-
     // page 4 (page 2 of GI Alliance form)
     val page4Bitmap = BitmapFactory.decodeStream(
         context.assets.open("alliance_page_2.png")
@@ -233,6 +421,7 @@ fun generatePdfReport(
     }
 
     canvas4.restore()
+
     pdf.finishPage(page4)
 
 
@@ -467,7 +656,115 @@ private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
 private const val eatLessY = 419f
 private const val declineSocialY = eatLessY + 63f
 private const val avoidActivitiesY = declineSocialY + 63f
+private const val arriveLateLeaveEarlyY = avoidActivitiesY + 63f
+private const val missWorkOrSchoolY = arriveLateLeaveEarlyY + 63f
+private const val loseSleepY = missWorkOrSchoolY + 62f
+private const val loseSexualDesireY = loseSleepY + 62f
+private const val InBedAllorMostOfDayY = loseSexualDesireY + 61f
+
+
+private val appetiteX = mapOf(
+    0 to 932f,
+    1 to 1256f,
+    2 to 1632f
+)
+
+private const val appetiteY = 1700f
+
+private const val QUESTION9_X = 932f
+private const val QUESTION9_TEXT_X = 1752f
+private const val QUESTION9_IMPROVED_Y = 2620f
+private const val QUESTION9_WORSE_Y = 2738f
+private const val QUESTION9_SAME_Y = 2849f
+private const val QUESTION10_TEXT_X = 1800f
+private const val QUESTION10_TEXT_Y = 3000f   // adjust if needed
+private const val QUESTION10_MAX_WIDTH = 1200f
+
 private const val ALLIANCE_NAME_X = 395f
 private const val ALLIANCE_NAME_Y = 290f
 private const val ALLIANCE_DOB_X = 1200f
 private const val ALLIANCE_DOB_Y = 290f
+
+
+// Rectal bleeding X positions
+private const val RECTAL_X_LEFT = 911f       // Never, Trace
+private const val RECTAL_X_RIGHT = 1312f     // Occasional, Usual
+
+// Rectal bleeding Y positions
+private const val RECTAL_TRACE_Y = 3000f
+private const val RECTAL_NEVER_Y = 3060f
+private const val RECTAL_OCCASIONAL_Y = 3000f
+private const val RECTAL_USUAL_Y = 3060f
+
+
+// Nausea (Page 1 or wherever this question appears)
+private const val NAUSEA_Y = 1900f
+
+private val NAUSEA_X = mapOf(
+    0 to 932f,   // Increased
+    1 to 1256f,  // Decreased
+    2 to 1632f   // Stayed the same
+)
+
+
+private fun drawMultilineText(
+    canvas: android.graphics.Canvas,
+    text: String,
+    startX: Float,
+    startY: Float,
+    paint: Paint,
+    maxWidth: Float,
+    lineSpacing: Float
+) {
+    var y = startY
+    val words = text.split(" ")
+    var line = ""
+
+    words.forEach { word ->
+        val testLine = if (line.isEmpty()) word else "$line $word"
+        val width = paint.measureText(testLine)
+
+        if (width > maxWidth) {
+            canvas.drawText(line, startX, y, paint)
+            line = word
+            y += lineSpacing
+        } else {
+            line = testLine
+        }
+    }
+
+    if (line.isNotEmpty()) {
+        canvas.drawText(line, startX, y, paint)
+    }
+
+
+
+}
+
+private const val WEIGHT_Y = appetiteY + 200f
+
+private const val WEIGHT_LBS_X = 1000f
+private const val WEIGHT_LBS_Y = WEIGHT_Y + 90f
+
+
+private const val COMPLICATION_COL1_X = 932f
+private const val COMPLICATION_COL2_X = 1256f
+private const val COMPLICATION_COL3_X = 1632f
+
+private const val JOINT_PAIN_Y = 3400f
+private const val SKIN_ISSUES_Y = 3465f
+private const val EYE_ISSUES_Y = 3400f
+private const val LIVER_ISSUES_Y = 3465f
+private const val KIDNEY_ISSUES_Y = 3400f
+private const val RECTAL_ISSUES_Y = 3465f
+
+
+private fun hasRecentSymptom(
+    symptoms: List<SymptomEntity>,
+    names: Set<String>
+): Boolean {
+    val oneMonthAgo = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
+    return symptoms.any {
+        it.timestamp >= oneMonthAgo && it.name in names
+    }
+}

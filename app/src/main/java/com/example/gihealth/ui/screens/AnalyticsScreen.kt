@@ -1,6 +1,7 @@
 package com.example.gihealth.ui.screens
 
 import android.app.Application
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,16 +34,24 @@ import kotlin.collections.emptyList
 import kotlin.math.roundToInt
 import com.example.gihealth.data.TopSymptomResults
 import com.example.gihealth.data.SymptomWithTrend
-
+import com.example.gihealth.ui.viewmodel.ReportViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     onOpenCalendar: () -> Unit,
-    vm: CalendarViewModel
+    vm: CalendarViewModel,
+    onGeneratePdf: () -> Unit
 ) {
+
     val context = LocalContext.current
+
+    val reportVM: ReportViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
 
     val symptomViewModel: SymptomViewModel = viewModel()
 
@@ -126,7 +135,6 @@ fun AnalyticsScreen(
                         val today = LocalDate.now()
                         val startDay = today.minusDays(6)
 
-                        // Filter past 7 days of wellbeing entries
                         val last7 = wellBeingEntries.filter { entry ->
                             val d = Instant.ofEpochMilli(entry.timestamp)
                                 .atZone(zone)
@@ -134,7 +142,6 @@ fun AnalyticsScreen(
                             d in startDay..today
                         }
 
-                        // Latest stress entry per day
                         val latestPerDay = last7
                             .groupBy { entry ->
                                 Instant.ofEpochMilli(entry.timestamp)
@@ -147,41 +154,29 @@ fun AnalyticsScreen(
 
                         val todayStressRating: Int? = latestPerDay[today]?.stressRating
 
+                        // Weekly average
                         val weeklyAvgStressRating: Double? =
                             if (latestPerDay.isNotEmpty())
                                 latestPerDay.values.map { it.stressRating }.average()
-                            else
-                                null
+                            else null
 
-
-                        val abdominalPainLogs = symptomsList
-                            .filter { it.name == "Abdominal pain" }
+                        val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
 
                         val startOfTodayMillis =
                             today.atStartOfDay(zone).toInstant().toEpochMilli()
 
-                        // today's abdominal pain (0 if not logged)
-                        val todayAbdominalPain: Int =
+                        reportVM.todayAbdominalPain =
                             abdominalPainLogs
                                 .filter { it.timestamp >= startOfTodayMillis }
                                 .maxByOrNull { it.timestamp }
                                 ?.severity
                                 ?: 0
 
-                        // weekly abdominal pain
                         val dailyPainValues = (0..6).map { offset ->
                             val date = today.minusDays(offset.toLong())
 
-                            val dayStart = date
-                                .atStartOfDay(zone)
-                                .toInstant()
-                                .toEpochMilli()
-
-                            val dayEnd = date
-                                .plusDays(1)
-                                .atStartOfDay(zone)
-                                .toInstant()
-                                .toEpochMilli()
+                            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+                            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
 
                             abdominalPainLogs
                                 .filter { it.timestamp in dayStart until dayEnd }
@@ -190,18 +185,17 @@ fun AnalyticsScreen(
                                 ?: 0
                         }
 
-                        val weeklyAvgAbdominalPain: Double =
-                            dailyPainValues.average()
+                        reportVM.weeklyAvgAbdominalPain =
+                            if (dailyPainValues.isNotEmpty())
+                                dailyPainValues.average()
+                            else null
 
-                        generatePdfReport(
-                            context = context,
-                            symptoms = symptomsList,
-                            userInfo = userInfo,
-                            todayStressRating = todayStressRating,
-                            weeklyAvgStressRating = weeklyAvgStressRating,
-                            todayAbdominalPain = todayAbdominalPain,
-                            weeklyAvgAbdominalPain = weeklyAvgAbdominalPain
-                        )
+                        reportVM.symptoms = symptomsList
+                        reportVM.todayStressRating = todayStressRating
+                        reportVM.weeklyAvgStressRating = weeklyAvgStressRating
+                        reportVM.userInfoSnapshot = userInfo   // UserInfoEntity?
+
+                        onGeneratePdf()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0F9D58)
