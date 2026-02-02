@@ -24,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gihealth.data.SymptomEntity
 import com.example.gihealth.data.WellBeingEntity
 import com.example.gihealth.data.WellBeingViewModel
+import com.example.gihealth.data.UserInfoViewModel
 import com.example.gihealth.utils.generatePdfReport
 import java.time.*
 import java.time.format.TextStyle
@@ -45,6 +46,13 @@ fun AnalyticsScreen(
     val context = LocalContext.current
 
     val symptomViewModel: SymptomViewModel = viewModel()
+
+    val userInfoViewModel: UserInfoViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
+    val userInfo by userInfoViewModel.userInfo.observeAsState()
 
     // NEW: WellBeingViewModel for real weight data
     val wellBeingViewModel: WellBeingViewModel = viewModel(
@@ -114,7 +122,47 @@ fun AnalyticsScreen(
                 val symptomsList by viewModel.symptoms.collectAsState()
                 // button to generate the pdf report
                 Button(
-                    onClick = {  onGeneratePdf() },
+                    onClick = {
+                        val zone = java.time.ZoneId.systemDefault()
+                        val today = java.time.LocalDate.now()
+                        val startDay = today.minusDays(6)
+
+                        // Filter past 7 days
+                        val last7 = wellBeingEntries.filter { entry ->
+                            val d = java.time.Instant.ofEpochMilli(entry.timestamp)
+                                .atZone(zone)
+                                .toLocalDate()
+                            d in startDay..today
+                        }
+
+                        // Latest entry per day
+                        val latestPerDay = last7
+                            .groupBy { entry ->
+                                java.time.Instant.ofEpochMilli(entry.timestamp)
+                                    .atZone(zone)
+                                    .toLocalDate()
+                            }
+                            .mapValues { (_, list) ->
+                                list.maxByOrNull { it.timestamp }!!
+                            }
+
+                        val todayStressRating: Int? = latestPerDay[today]?.stressRating
+
+                        // Weekly average
+                        val weeklyAvgStressRating: Double? =
+                            if (latestPerDay.isNotEmpty())
+                                latestPerDay.values.map { it.stressRating }.average()
+                            else
+                                null
+
+                        generatePdfReport(
+                            context = context,
+                            symptoms = symptomsList,
+                            userInfo = userInfo,
+                            todayStressRating = todayStressRating,
+                            weeklyAvgStressRating = weeklyAvgStressRating
+                        )
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0F9D58)
                     ),
