@@ -41,12 +41,55 @@ class ReportBuilder {
         // QUESTION 3 - Compute number of flares
         val flaresPastYear = countFlaresPastYear(symptoms)
 
-
+        val rectalBleedingFrequency = computeRectalBleedingFrequency(symptoms)
         // return PDF-ready model
+        val nauseaRows = symptoms.filter { it.name == "Nausea" }
+
+        val nauseaChange = if (nauseaRows.size >= 2) {
+            val first = nauseaRows.first().severity
+            val last = nauseaRows.last().severity
+
+            when {
+                last > first -> 0   // Increased
+                last < first -> 1   // Decreased
+                else -> 2           // Stayed the same
+            }
+        } else {
+            null
+        }
+
+        val weightRows = symptoms
+            .filter { it.name == "Weight" }
+            .sortedBy { it.timestamp }
+
+        val weightChange: Int?
+        val weightDelta: Int?
+
+        if (weightRows.size >= 2) {
+            val first = weightRows.first().severity.toFloat()
+            val last = weightRows.last().severity.toFloat()
+
+            weightChange = when {
+                last > first -> 0   // Increased
+                last < first -> 1   // Decreased
+                else -> 2           // Stayed the Same
+            }
+
+            weightDelta = kotlin.math.abs(last - first).roundToInt()
+        } else {
+            weightChange = null
+            weightDelta = null
+        }
+
+
         return PDFReport(
             bowelMovementsPerDay = avgBowelMovements,
             avgAbdominalPain = avgAbdominalPain,
-            flaresPastYear = flaresPastYear
+            flaresPastYear = flaresPastYear,
+            rectalBleedingFrequency = rectalBleedingFrequency,
+            nauseaChange = nauseaChange,
+            weightChange = weightChange,
+            weightDeltaLbs = weightDelta
         )
     }
 
@@ -83,6 +126,35 @@ class ReportBuilder {
 
         return symptomsByDay.count { (_, dailySymptoms) ->
             dailySymptoms.map { it.name }.distinct().size >= 2
+        }
+    }
+
+    private fun computeRectalBleedingFrequency(symptoms: List<SymptomEntity>): Int {
+        val now = System.currentTimeMillis()
+        val thirtyDaysAgo = now - 30L * 24 * 60 * 60 * 1000
+
+        val bleedingLogs = symptoms.filter {
+            it.name == "Blood in stool" && it.timestamp >= thirtyDaysAgo
+        }
+
+        if (bleedingLogs.isEmpty()) return 0 // Never
+
+        val daysWithBleeding = bleedingLogs
+            .groupBy {
+                Instant.ofEpochMilli(it.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }
+            .size
+
+        val totalDays = 30
+        val ratio = daysWithBleeding.toDouble() / totalDays
+
+        return when {
+            ratio == 0.0 -> 0          // Never
+            ratio <= 0.25 -> 1         // Trace
+            ratio <= 0.50 -> 2         // Occasionally
+            else -> 3                  // Usually
         }
     }
 

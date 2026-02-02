@@ -46,6 +46,7 @@ fun generatePdfReport(
 
     val tempDob = "08/11/2026"
 
+
     // make page 1 of questionnaire
     val page1Bitmap = BitmapFactory.decodeStream(
         context.assets.open("Report_page_1.png")
@@ -84,6 +85,19 @@ fun generatePdfReport(
     report.flaresPastYear?.let { count ->
         val label = flareCountLabel(count)
         val (x, y) = flareCountPositions[label]!!
+        canvas1.drawText("✔", x, y, paint)
+    }
+
+    report.rectalBleedingFrequency?.let { value ->
+
+        val (x, y) = when (value) {
+            0 -> RECTAL_X_LEFT  to RECTAL_TRACE_Y
+            1 -> RECTAL_X_LEFT  to RECTAL_NEVER_Y
+            2 -> RECTAL_X_RIGHT to RECTAL_OCCASIONAL_Y
+            3 -> RECTAL_X_RIGHT to RECTAL_USUAL_Y
+            else -> return@let
+        }
+
         canvas1.drawText("✔", x, y, paint)
     }
 
@@ -196,6 +210,55 @@ fun generatePdfReport(
         canvas2.drawText("✔", x, appetiteY, paint)
     }
 
+    report.nauseaChange?.let { value ->
+        val x = NAUSEA_X[value] ?: return@let
+        canvas1.drawText("✔", x, NAUSEA_Y, paint)
+    }
+
+    report.weightChange?.let { value ->
+        val x = appetiteX[value] ?: return@let
+        canvas2.drawText("✔", x, WEIGHT_Y, paint)
+    }
+
+
+    report.weightChange
+        ?.takeIf { it != 2 } // not "Stayed the Same"
+        ?.let {
+            report.weightDeltaLbs?.let { lbs ->
+                canvas2.drawText(
+                    lbs.toString(),
+                    WEIGHT_LBS_X,
+                    WEIGHT_LBS_Y,
+                    Paint(paint).apply { textSize = 36f }
+                )
+            }
+        }
+
+
+    if (hasRecentSymptom(symptoms, setOf("Joint pain"))) {
+        canvas1.drawText("✔", COMPLICATION_COL1_X, JOINT_PAIN_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Rashes", "Itching"))) {
+        canvas1.drawText("✔", COMPLICATION_COL1_X, SKIN_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Eye pain", "Eye irritation", "Eye Redness"))) {
+        canvas1.drawText("✔", COMPLICATION_COL2_X, EYE_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Jaundice"))) {
+        canvas1.drawText("✔", COMPLICATION_COL2_X, LIVER_ISSUES_Y, paint)
+    }
+
+
+    if (hasRecentSymptom(symptoms, setOf("Blood in urine", "Dark urine"))) {
+        canvas1.drawText("✔", COMPLICATION_COL3_X, KIDNEY_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Anorectal pain/itching", "Blood in stool"))) {
+        canvas1.drawText("✔", COMPLICATION_COL3_X, RECTAL_ISSUES_Y, paint)
+    }
 
     answers.question9a?.let { value ->
         val checkboxY = when (value) {
@@ -565,6 +628,29 @@ private const val ALLIANCE_NAME_X = 395f
 private const val ALLIANCE_NAME_Y = 290f
 private const val ALLIANCE_DOB_X = 1200f
 private const val ALLIANCE_DOB_Y = 290f
+
+
+// Rectal bleeding X positions
+private const val RECTAL_X_LEFT = 911f       // Never, Trace
+private const val RECTAL_X_RIGHT = 1312f     // Occasional, Usual
+
+// Rectal bleeding Y positions
+private const val RECTAL_TRACE_Y = 3000f
+private const val RECTAL_NEVER_Y = 3060f
+private const val RECTAL_OCCASIONAL_Y = 3000f
+private const val RECTAL_USUAL_Y = 3060f
+
+
+// Nausea (Page 1 or wherever this question appears)
+private const val NAUSEA_Y = 1900f
+
+private val NAUSEA_X = mapOf(
+    0 to 932f,   // Increased
+    1 to 1256f,  // Decreased
+    2 to 1632f   // Stayed the same
+)
+
+
 private fun drawMultilineText(
     canvas: android.graphics.Canvas,
     text: String,
@@ -593,5 +679,36 @@ private fun drawMultilineText(
 
     if (line.isNotEmpty()) {
         canvas.drawText(line, startX, y, paint)
+    }
+
+
+
+}
+
+private const val WEIGHT_Y = appetiteY + 200f
+
+private const val WEIGHT_LBS_X = 1000f
+private const val WEIGHT_LBS_Y = WEIGHT_Y + 90f
+
+
+private const val COMPLICATION_COL1_X = 932f
+private const val COMPLICATION_COL2_X = 1256f
+private const val COMPLICATION_COL3_X = 1632f
+
+private const val JOINT_PAIN_Y = 3400f
+private const val SKIN_ISSUES_Y = 3465f
+private const val EYE_ISSUES_Y = 3400f
+private const val LIVER_ISSUES_Y = 3465f
+private const val KIDNEY_ISSUES_Y = 3400f
+private const val RECTAL_ISSUES_Y = 3465f
+
+
+private fun hasRecentSymptom(
+    symptoms: List<SymptomEntity>,
+    names: Set<String>
+): Boolean {
+    val oneMonthAgo = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
+    return symptoms.any {
+        it.timestamp >= oneMonthAgo && it.name in names
     }
 }
