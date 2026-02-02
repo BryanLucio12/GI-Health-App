@@ -122,22 +122,22 @@ fun AnalyticsScreen(
                 // button to generate the pdf report
                 Button(
                     onClick = {
-                        val zone = java.time.ZoneId.systemDefault()
-                        val today = java.time.LocalDate.now()
+                        val zone = ZoneId.systemDefault()
+                        val today = LocalDate.now()
                         val startDay = today.minusDays(6)
 
-                        // Filter past 7 days
+                        // Filter past 7 days of wellbeing entries
                         val last7 = wellBeingEntries.filter { entry ->
-                            val d = java.time.Instant.ofEpochMilli(entry.timestamp)
+                            val d = Instant.ofEpochMilli(entry.timestamp)
                                 .atZone(zone)
                                 .toLocalDate()
                             d in startDay..today
                         }
 
-                        // Latest entry per day
+                        // Latest stress entry per day
                         val latestPerDay = last7
                             .groupBy { entry ->
-                                java.time.Instant.ofEpochMilli(entry.timestamp)
+                                Instant.ofEpochMilli(entry.timestamp)
                                     .atZone(zone)
                                     .toLocalDate()
                             }
@@ -147,19 +147,60 @@ fun AnalyticsScreen(
 
                         val todayStressRating: Int? = latestPerDay[today]?.stressRating
 
-                        // Weekly average
                         val weeklyAvgStressRating: Double? =
                             if (latestPerDay.isNotEmpty())
                                 latestPerDay.values.map { it.stressRating }.average()
                             else
                                 null
 
+
+                        val abdominalPainLogs = symptomsList
+                            .filter { it.name == "Abdominal pain" }
+
+                        val startOfTodayMillis =
+                            today.atStartOfDay(zone).toInstant().toEpochMilli()
+
+                        // today's abdominal pain (0 if not logged)
+                        val todayAbdominalPain: Int =
+                            abdominalPainLogs
+                                .filter { it.timestamp >= startOfTodayMillis }
+                                .maxByOrNull { it.timestamp }
+                                ?.severity
+                                ?: 0
+
+                        // weekly abdominal pain
+                        val dailyPainValues = (0..6).map { offset ->
+                            val date = today.minusDays(offset.toLong())
+
+                            val dayStart = date
+                                .atStartOfDay(zone)
+                                .toInstant()
+                                .toEpochMilli()
+
+                            val dayEnd = date
+                                .plusDays(1)
+                                .atStartOfDay(zone)
+                                .toInstant()
+                                .toEpochMilli()
+
+                            abdominalPainLogs
+                                .filter { it.timestamp in dayStart until dayEnd }
+                                .maxByOrNull { it.timestamp }
+                                ?.severity
+                                ?: 0
+                        }
+
+                        val weeklyAvgAbdominalPain: Double =
+                            dailyPainValues.average()
+
                         generatePdfReport(
                             context = context,
                             symptoms = symptomsList,
                             userInfo = userInfo,
                             todayStressRating = todayStressRating,
-                            weeklyAvgStressRating = weeklyAvgStressRating
+                            weeklyAvgStressRating = weeklyAvgStressRating,
+                            todayAbdominalPain = todayAbdominalPain,
+                            weeklyAvgAbdominalPain = weeklyAvgAbdominalPain
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
