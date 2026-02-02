@@ -1,5 +1,7 @@
 package com.example.gihealth.ui.screens
 
+import android.app.Application
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,21 +12,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.gihealth.data.SymptomEntity
+import com.example.gihealth.data.UserInfoEntity
 import com.example.gihealth.models.PdfQuestionnaireAnswers
+import com.example.gihealth.ui.viewmodel.ReportViewModel
 import com.example.gihealth.utils.generatePdfReport
 import kotlin.Int
 
 @Composable
 fun UserPDFQuestionnaire(
-    navController: NavController,
-    symptoms: List<SymptomEntity>,
+    navController: NavController
 ) {
+    val context = LocalContext.current
+
+    val reportVM: ReportViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
+
     var answers by remember {
         mutableStateOf(
             PdfQuestionnaireAnswers(
-                // Question 1 – Challenges
                 eatLess = null,
                 declineSocial = null,
                 avoidActivities = null,
@@ -33,7 +45,6 @@ fun UserPDFQuestionnaire(
                 loseSexualDesire = null,
                 inBedAllOrMostOfDay = null,
 
-                // Question 2 – Emotions
                 anxious = null,
                 depressed = null,
                 frustrated = null,
@@ -47,10 +58,8 @@ fun UserPDFQuestionnaire(
                 guilty = null,
                 noneOfTheAbove = null,
 
-                // Question 3 – Appetite
                 appetite = null,
 
-                // Question 9 – Improvements
                 question9a = null,
                 question9b = null,
                 question9c = null,
@@ -122,7 +131,7 @@ fun UserPDFQuestionnaire(
         ) {
             Column(modifier = Modifier.weight(1f)){
 
-                EmotionCheckbox("Anxious", answers.anxious){
+                EmotionCheckbox("AnxiouPs", answers.anxious){
                     answers = answers.copy(anxious = it)
                 }
 
@@ -285,22 +294,24 @@ fun UserPDFQuestionnaire(
             ),
             maxLines = 6
         )
-        val context = LocalContext.current
 
         Button(
             onClick = {
+                // Save questionnaire answers
+                reportVM.answers = answers
+
+                // Generate PDF using EVERYTHING collected
                 generatePdfReport(
                     context = context,
-                    symptoms = symptoms,
-                    answers = answers
+                    symptoms = reportVM.symptoms,
+                    answers = reportVM.answers!!,
+                    userInfo = reportVM.userInfoSnapshot,
+                    todayStressRating = reportVM.todayStressRating,
+                    weeklyAvgStressRating = reportVM.weeklyAvgStressRating
                 )
 
-                navController.navigate("add")
-                {
-                    popUpTo("user_pdf_questionnaire")
-                    {
-                        inclusive = true
-                    }
+                navController.navigate("add") {
+                    popUpTo("user_pdf_questionnaire") { inclusive = true }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -311,6 +322,7 @@ fun UserPDFQuestionnaire(
         ) {
             Text("Generate PDF")
         }
+
     }
 }
 

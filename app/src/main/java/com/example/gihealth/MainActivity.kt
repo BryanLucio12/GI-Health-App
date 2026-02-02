@@ -377,10 +377,8 @@ fun NavHostContainer(
         }
 
         composable("pdf_questionnaire") {
-            val symptoms by symptomViewModel.symptoms.collectAsState()
 
             UserPDFQuestionnaire(
-                symptoms = symptoms,
                 navController = navController
             )
         }

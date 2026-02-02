@@ -19,7 +19,7 @@ import android.graphics.Paint
 fun generatePdfReport(
     context: Context,
     symptoms: List<SymptomEntity>,
-    answers: PdfQuestionnaireAnswers? = null,
+    answers: PdfQuestionnaireAnswers,
     userInfo: UserInfoEntity? = null,
     todayStressRating: Int? = null,
     weeklyAvgStressRating: Double? = null
@@ -106,102 +106,144 @@ fun generatePdfReport(
     // draw the page 2 background
     canvas2.drawBitmap(page2Bitmap, 0f, 0f, null)
 
-    answers?.eatLess?.let { freq ->
+    answers.eatLess.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, eatLessY, paint)
     }
 
-    answers?.declineSocial?.let { freq ->
+    answers.declineSocial.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, declineSocialY, paint)
     }
 
-    answers?.avoidActivities?.let { freq ->
+    answers.avoidActivities.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, avoidActivitiesY, paint)
     }
 
-    answers?.arriveLateLeaveEarly?.let { freq ->
+    answers.arriveLateLeaveEarly.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, arriveLateLeaveEarlyY, paint)
     }
 
-    answers?.missWorkOrSchool?.let { freq ->
+    answers.missWorkOrSchool.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, missWorkOrSchoolY, paint)
     }
 
-    answers?.loseSexualDesire?.let { freq ->
+    answers.loseSexualDesire.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, loseSexualDesireY, paint)
     }
 
-    answers?.inBedAllOrMostOfDay?.let { freq ->
+    answers.inBedAllOrMostOfDay.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, InBedAllorMostOfDayY, paint)
     }
 
 
 
-   answers?.anxious?.takeIf { it == 1 }?.let {
+   answers.anxious.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1632f, 1254f, paint)
     }
 
-    answers?.depressed?.takeIf { it == 1 }?.let {
+    answers.depressed.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1632f,1130f , paint)
     }
 
-    answers?.frustrated?.takeIf { it == 1 }?.let {
+    answers.frustrated.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1316f, paint)
     }
 
-    answers?.isolated?.takeIf { it == 1 }?.let {
+    answers.isolated.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1130f, paint)
     }
 
-    answers?.stressed?.takeIf { it == 1 }?.let {
+    answers.stressed.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1130f, paint)
     }
 
-    answers?.helpless?.takeIf { it == 1 }?.let {
+    answers.helpless.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1192f, paint)
     }
 
-    answers?.overwhelmed?.takeIf { it == 1 }?.let {
+    answers.overwhelmed.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1192f, paint)
     }
 
-    answers?.angry?.takeIf { it == 1 }?.let {
+    answers.angry.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1632f, 1192f, paint)
     }
 
-    answers?.sad?.takeIf { it == 1 }?.let {
+    answers.sad.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1254f, paint)
     }
 
-    answers?.embarrassed?.takeIf { it == 1 }?.let {
+    answers.embarrassed.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1254f, paint)
     }
 
-    answers?.guilty?.takeIf { it == 1 }?.let {
+    answers.guilty.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1316f, paint)
     }
 
-    answers?.noneOfTheAbove?.takeIf { it == 1 }?.let {
+    answers.noneOfTheAbove.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1378f, paint)
     }
 
-    answers?.appetite?.let { value ->
+    answers.appetite.let { value ->
         val x = appetiteX[value] ?: return@let
         canvas2.drawText("✔", x, appetiteY, paint)
     }
 
 
-    answers?.question9a?.let {
-        if (it == 1) {
-            canvas2.drawText("✔", question9X, question9aY, paint)
+    answers.question9a?.let { value ->
+        val checkboxY = when (value) {
+            0 -> QUESTION9_IMPROVED_Y
+            1 -> QUESTION9_WORSE_Y
+            2 -> QUESTION9_SAME_Y
+            else -> return@let
         }
+
+        // Draw checkmark
+        canvas2.drawText("✔", QUESTION9_X, checkboxY, paint)
+
+        // Draw explanation text ONLY for Improved or Worse
+        val explanationText = when (value) {
+            0 -> answers.question9b
+            1 -> answers.question9c
+            else -> null
+        }
+
+        explanationText
+            ?.takeIf { it.isNotBlank() }
+            ?.let { text ->
+                drawMultilineText(
+                    canvas = canvas2,
+                    text = text,
+                    startX = QUESTION9_TEXT_X,
+                    startY = checkboxY + 50f,
+                    paint = Paint(paint).apply { textSize = 32f },
+                    maxWidth = 900f,
+                    lineSpacing = 42f
+                )
+            }
     }
+
+    answers.question10a
+        ?.takeIf { it.isNotBlank() }
+        ?.let { text ->
+            drawMultilineText(
+                canvas = canvas2,
+                text = text,
+                startX = QUESTION10_TEXT_X,
+                startY = QUESTION10_TEXT_Y,
+                paint = Paint(paint).apply { textSize = 34f },
+                maxWidth = QUESTION10_MAX_WIDTH,
+                lineSpacing = 44f
+            )
+        }
+
 
 
 
@@ -510,10 +552,46 @@ private val appetiteX = mapOf(
 
 private const val appetiteY = 1700f
 
-private const val question9X = 932f
-private const val question9aY = 1900f
+private const val QUESTION9_X = 932f
+private const val QUESTION9_TEXT_X = 1752f
+private const val QUESTION9_IMPROVED_Y = 2620f
+private const val QUESTION9_WORSE_Y = 2738f
+private const val QUESTION9_SAME_Y = 2849f
+private const val QUESTION10_TEXT_X = 1800f
+private const val QUESTION10_TEXT_Y = 3000f   // adjust if needed
+private const val QUESTION10_MAX_WIDTH = 1200f
 
 private const val ALLIANCE_NAME_X = 395f
 private const val ALLIANCE_NAME_Y = 290f
 private const val ALLIANCE_DOB_X = 1200f
 private const val ALLIANCE_DOB_Y = 290f
+private fun drawMultilineText(
+    canvas: android.graphics.Canvas,
+    text: String,
+    startX: Float,
+    startY: Float,
+    paint: Paint,
+    maxWidth: Float,
+    lineSpacing: Float
+) {
+    var y = startY
+    val words = text.split(" ")
+    var line = ""
+
+    words.forEach { word ->
+        val testLine = if (line.isEmpty()) word else "$line $word"
+        val width = paint.measureText(testLine)
+
+        if (width > maxWidth) {
+            canvas.drawText(line, startX, y, paint)
+            line = word
+            y += lineSpacing
+        } else {
+            line = testLine
+        }
+    }
+
+    if (line.isNotEmpty()) {
+        canvas.drawText(line, startX, y, paint)
+    }
+}

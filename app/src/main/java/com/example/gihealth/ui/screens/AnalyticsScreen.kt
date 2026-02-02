@@ -26,7 +26,6 @@ import com.example.gihealth.data.SymptomEntity
 import com.example.gihealth.data.WellBeingEntity
 import com.example.gihealth.data.WellBeingViewModel
 import com.example.gihealth.data.UserInfoViewModel
-import com.example.gihealth.utils.generatePdfReport
 import java.time.*
 import java.time.format.TextStyle
 import java.util.Locale
@@ -34,7 +33,7 @@ import kotlin.collections.emptyList
 import kotlin.math.roundToInt
 import com.example.gihealth.data.TopSymptomResults
 import com.example.gihealth.data.SymptomWithTrend
-import com.example.gihealth.models.PdfQuestionnaireAnswers
+import com.example.gihealth.ui.viewmodel.ReportViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +45,12 @@ fun AnalyticsScreen(
 ) {
 
     val context = LocalContext.current
+
+    val reportVM: ReportViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
 
     val symptomViewModel: SymptomViewModel = viewModel()
 
@@ -62,7 +67,6 @@ fun AnalyticsScreen(
             context.applicationContext as Application
         )
     )
-    val questionnaireVM: PdfQuestionnaireAnswers = viewModel()
 
     var expanded by remember { mutableStateOf(false) }
     var typeOfRange by remember { mutableStateOf("This Week") }
@@ -130,7 +134,6 @@ fun AnalyticsScreen(
                         val today = LocalDate.now()
                         val startDay = today.minusDays(6)
 
-                        // Filter past 7 days
                         val last7 = wellBeingEntries.filter { entry ->
                             val d = Instant.ofEpochMilli(entry.timestamp)
                                 .atZone(zone)
@@ -138,7 +141,6 @@ fun AnalyticsScreen(
                             d in startDay..today
                         }
 
-                        // Latest entry per day
                         val latestPerDay = last7
                             .groupBy { entry ->
                                 Instant.ofEpochMilli(entry.timestamp)
@@ -151,22 +153,17 @@ fun AnalyticsScreen(
 
                         val todayStressRating: Int? = latestPerDay[today]?.stressRating
 
-                        // Weekly average
                         val weeklyAvgStressRating: Double? =
                             if (latestPerDay.isNotEmpty())
                                 latestPerDay.values.map { it.stressRating }.average()
-                            else
-                                null
+                            else null
 
-                        generatePdfReport(
-                            context = context,
-                            symptoms = symptomsList,
-                            answers = null,
-                            userInfo = userInfo,
-                            todayStressRating = todayStressRating,
-                            weeklyAvgStressRating = weeklyAvgStressRating,
+                        reportVM.symptoms = symptomsList
+                        reportVM.todayStressRating = todayStressRating
+                        reportVM.weeklyAvgStressRating = weeklyAvgStressRating
+                        reportVM.userInfoSnapshot = userInfo   // UserInfoEntity?
 
-                        )
+                        onGeneratePdf()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0F9D58)
