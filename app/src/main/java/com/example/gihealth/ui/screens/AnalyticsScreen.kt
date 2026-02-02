@@ -160,6 +160,36 @@ fun AnalyticsScreen(
                                 latestPerDay.values.map { it.stressRating }.average()
                             else null
 
+                        val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
+
+                        val startOfTodayMillis =
+                            today.atStartOfDay(zone).toInstant().toEpochMilli()
+
+                        reportVM.todayAbdominalPain =
+                            abdominalPainLogs
+                                .filter { it.timestamp >= startOfTodayMillis }
+                                .maxByOrNull { it.timestamp }
+                                ?.severity
+                                ?: 0
+
+                        val dailyPainValues = (0..6).map { offset ->
+                            val date = today.minusDays(offset.toLong())
+
+                            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+                            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+
+                            abdominalPainLogs
+                                .filter { it.timestamp in dayStart until dayEnd }
+                                .maxByOrNull { it.timestamp }
+                                ?.severity
+                                ?: 0
+                        }
+
+                        reportVM.weeklyAvgAbdominalPain =
+                            if (dailyPainValues.isNotEmpty())
+                                dailyPainValues.average()
+                            else null
+
                         reportVM.symptoms = symptomsList
                         reportVM.todayStressRating = todayStressRating
                         reportVM.weeklyAvgStressRating = weeklyAvgStressRating

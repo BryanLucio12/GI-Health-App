@@ -17,4 +17,7 @@ class ReportViewModel(application: Application) : AndroidViewModel(application) 
 
     var answers: PdfQuestionnaireAnswers? = null
 
+    var todayAbdominalPain: Int? = null
+    var weeklyAvgAbdominalPain: Double? = null
+
 }
