@@ -2,15 +2,15 @@ package com.example.gihealth.utils
 
 import android.content.Context
 import android.graphics.BitmapFactory
-import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.widget.Toast
 import java.io.File
 import java.io.FileOutputStream
+import com.example.gihealth.models.PdfQuestionnaireAnswers
 import com.example.gihealth.data.*
 import kotlin.math.roundToInt
 //import com.example.gihealth.utils.ReportBuilder
-import com.example.gihealth.models.PdfQuestionnaireAnswers
+
 
 
 // import used to make answers
@@ -19,8 +19,7 @@ import android.graphics.Paint
 fun generatePdfReport(
     context: Context,
     symptoms: List<SymptomEntity>,
-    answers: PdfQuestionnaireAnswers
-    symptoms: List<SymptomEntity>,
+    answers: PdfQuestionnaireAnswers? = null,
     userInfo: UserInfoEntity? = null,
     todayStressRating: Int? = null,
     weeklyAvgStressRating: Double? = null
@@ -107,98 +106,98 @@ fun generatePdfReport(
     // draw the page 2 background
     canvas2.drawBitmap(page2Bitmap, 0f, 0f, null)
 
-    answers.eatLess?.let { freq ->
+    answers?.eatLess?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, eatLessY, paint)
     }
 
-    answers.declineSocial?.let { freq ->
+    answers?.declineSocial?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, declineSocialY, paint)
     }
 
-    answers.avoidActivities?.let { freq ->
+    answers?.avoidActivities?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, avoidActivitiesY, paint)
     }
 
-    answers.arriveLateLeaveEarly?.let { freq ->
+    answers?.arriveLateLeaveEarly?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, arriveLateLeaveEarlyY, paint)
     }
 
-    answers.missWorkOrSchool?.let { freq ->
+    answers?.missWorkOrSchool?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, missWorkOrSchoolY, paint)
     }
 
-    answers.loseSexualDesire?.let { freq ->
+    answers?.loseSexualDesire?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, loseSexualDesireY, paint)
     }
 
-    answers.inBedAllOrMostOfDay?.let { freq ->
+    answers?.inBedAllOrMostOfDay?.let { freq ->
         val x = challengeFrequencyX[freq] ?: return@let
         canvas2.drawText("✔", x, InBedAllorMostOfDayY, paint)
     }
 
 
 
-   answers.anxious?.takeIf { it == 1 }?.let {
+   answers?.anxious?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1632f, 1254f, paint)
     }
 
-    answers.depressed?.takeIf { it == 1 }?.let {
+    answers?.depressed?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1632f,1130f , paint)
     }
 
-    answers.frustrated?.takeIf { it == 1 }?.let {
+    answers?.frustrated?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1316f, paint)
     }
 
-    answers.isolated?.takeIf { it == 1 }?.let {
+    answers?.isolated?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1130f, paint)
     }
 
-    answers.stressed?.takeIf { it == 1 }?.let {
+    answers?.stressed?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1130f, paint)
     }
 
-    answers.helpless?.takeIf { it == 1 }?.let {
+    answers?.helpless?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1192f, paint)
     }
 
-    answers.overwhelmed?.takeIf { it == 1 }?.let {
+    answers?.overwhelmed?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1192f, paint)
     }
 
-    answers.angry?.takeIf { it == 1 }?.let {
+    answers?.angry?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1632f, 1192f, paint)
     }
 
-    answers.sad?.takeIf { it == 1 }?.let {
+    answers?.sad?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1254f, paint)
     }
 
-    answers.embarrassed?.takeIf { it == 1 }?.let {
+    answers?.embarrassed?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1254f, paint)
     }
 
-    answers.guilty?.takeIf { it == 1 }?.let {
+    answers?.guilty?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 1256f, 1316f, paint)
     }
 
-    answers.noneOfTheAbove?.takeIf { it == 1 }?.let {
+    answers?.noneOfTheAbove?.takeIf { it == 1 }?.let {
         canvas2.drawText("✔", 932f, 1378f, paint)
     }
 
-    answers.appetite?.let { value ->
+    answers?.appetite?.let { value ->
         val x = appetiteX[value] ?: return@let
         canvas2.drawText("✔", x, appetiteY, paint)
     }
 
 
-    answers.question9a?.let {
+    answers?.question9a?.let {
         if (it == 1) {
             canvas2.drawText("✔", question9X, question9aY, paint)
         }

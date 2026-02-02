@@ -1,6 +1,7 @@
 package com.example.gihealth.ui.screens
 
 import android.app.Application
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,7 +34,7 @@ import kotlin.collections.emptyList
 import kotlin.math.roundToInt
 import com.example.gihealth.data.TopSymptomResults
 import com.example.gihealth.data.SymptomWithTrend
-
+import com.example.gihealth.models.PdfQuestionnaireAnswers
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,7 @@ fun AnalyticsScreen(
     vm: CalendarViewModel,
     onGeneratePdf: () -> Unit
 ) {
+
     val context = LocalContext.current
 
     val symptomViewModel: SymptomViewModel = viewModel()
@@ -60,6 +62,7 @@ fun AnalyticsScreen(
             context.applicationContext as Application
         )
     )
+    val questionnaireVM: PdfQuestionnaireAnswers = viewModel()
 
     var expanded by remember { mutableStateOf(false) }
     var typeOfRange by remember { mutableStateOf("This Week") }
@@ -123,13 +126,13 @@ fun AnalyticsScreen(
                 // button to generate the pdf report
                 Button(
                     onClick = {
-                        val zone = java.time.ZoneId.systemDefault()
-                        val today = java.time.LocalDate.now()
+                        val zone = ZoneId.systemDefault()
+                        val today = LocalDate.now()
                         val startDay = today.minusDays(6)
 
                         // Filter past 7 days
                         val last7 = wellBeingEntries.filter { entry ->
-                            val d = java.time.Instant.ofEpochMilli(entry.timestamp)
+                            val d = Instant.ofEpochMilli(entry.timestamp)
                                 .atZone(zone)
                                 .toLocalDate()
                             d in startDay..today
@@ -138,7 +141,7 @@ fun AnalyticsScreen(
                         // Latest entry per day
                         val latestPerDay = last7
                             .groupBy { entry ->
-                                java.time.Instant.ofEpochMilli(entry.timestamp)
+                                Instant.ofEpochMilli(entry.timestamp)
                                     .atZone(zone)
                                     .toLocalDate()
                             }
@@ -158,9 +161,11 @@ fun AnalyticsScreen(
                         generatePdfReport(
                             context = context,
                             symptoms = symptomsList,
+                            answers = null,
                             userInfo = userInfo,
                             todayStressRating = todayStressRating,
-                            weeklyAvgStressRating = weeklyAvgStressRating
+                            weeklyAvgStressRating = weeklyAvgStressRating,
+
                         )
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -386,10 +391,10 @@ fun SymptomSeverityGraph(
                 i.toString(),
                 -40f,
                 y + 5f,
-                android.graphics.Paint().apply {
+                Paint().apply {
                     color = android.graphics.Color.DKGRAY
                     textSize = 26f
-                    textAlign = android.graphics.Paint.Align.LEFT
+                    textAlign = Paint.Align.LEFT
                 }
             )
         }
@@ -436,10 +441,10 @@ fun SymptomSeverityGraph(
                     dayLabels[i],
                     x,
                     size.height,
-                    android.graphics.Paint().apply {
+                    Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 28f
-                        textAlign = android.graphics.Paint.Align.CENTER
+                        textAlign = Paint.Align.CENTER
                     }
                 )
             }
@@ -742,10 +747,10 @@ fun DigestiveComfortGraph(
                 i.toString(),
                 -32f,
                 y + 6f,
-                android.graphics.Paint().apply {
+                Paint().apply {
                     color = android.graphics.Color.GRAY
                     textSize = 24f
-                    textAlign = android.graphics.Paint.Align.LEFT
+                    textAlign = Paint.Align.LEFT
                 }
             )
         }
@@ -789,10 +794,10 @@ fun DigestiveComfortGraph(
                     dayLabels[i],
                     x,
                     size.height - 4f,
-                    android.graphics.Paint().apply {
+                    Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 24f
-                        textAlign = android.graphics.Paint.Align.CENTER
+                        textAlign = Paint.Align.CENTER
                     }
                 )
             }
@@ -942,10 +947,10 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
                 "${yValue.toInt()}",
                 -40f,
                 y + 6f,
-                android.graphics.Paint().apply {
+                Paint().apply {
                     color = android.graphics.Color.GRAY
                     textSize = 24f
-                    textAlign = android.graphics.Paint.Align.LEFT
+                    textAlign = Paint.Align.LEFT
                 }
             )
         }
@@ -989,10 +994,10 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
                     dayLabels[i],
                     x,
                     size.height - 4f,
-                    android.graphics.Paint().apply {
+                    Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 24f
-                        textAlign = android.graphics.Paint.Align.CENTER
+                        textAlign = Paint.Align.CENTER
                     }
                 )
             }
