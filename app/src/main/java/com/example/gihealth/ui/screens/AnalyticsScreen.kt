@@ -26,6 +26,7 @@ import com.example.gihealth.data.SymptomEntity
 import com.example.gihealth.data.WellBeingEntity
 import com.example.gihealth.data.WellBeingViewModel
 import com.example.gihealth.data.UserInfoViewModel
+import com.example.gihealth.utils.generatePdfReport
 import java.time.*
 import java.time.format.TextStyle
 import java.util.Locale
@@ -153,6 +154,7 @@ fun AnalyticsScreen(
 
                         val todayStressRating: Int? = latestPerDay[today]?.stressRating
 
+                        // Weekly average
                         val weeklyAvgStressRating: Double? =
                             if (latestPerDay.isNotEmpty())
                                 latestPerDay.values.map { it.stressRating }.average()
@@ -388,10 +390,10 @@ fun SymptomSeverityGraph(
                 i.toString(),
                 -40f,
                 y + 5f,
-                Paint().apply {
+                android.graphics.Paint().apply {
                     color = android.graphics.Color.DKGRAY
                     textSize = 26f
-                    textAlign = Paint.Align.LEFT
+                    textAlign = android.graphics.Paint.Align.LEFT
                 }
             )
         }
@@ -438,10 +440,10 @@ fun SymptomSeverityGraph(
                     dayLabels[i],
                     x,
                     size.height,
-                    Paint().apply {
+                    android.graphics.Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 28f
-                        textAlign = Paint.Align.CENTER
+                        textAlign = android.graphics.Paint.Align.CENTER
                     }
                 )
             }
@@ -744,10 +746,10 @@ fun DigestiveComfortGraph(
                 i.toString(),
                 -32f,
                 y + 6f,
-                Paint().apply {
+                android.graphics.Paint().apply {
                     color = android.graphics.Color.GRAY
                     textSize = 24f
-                    textAlign = Paint.Align.LEFT
+                    textAlign = android.graphics.Paint.Align.LEFT
                 }
             )
         }
@@ -791,10 +793,10 @@ fun DigestiveComfortGraph(
                     dayLabels[i],
                     x,
                     size.height - 4f,
-                    Paint().apply {
+                    android.graphics.Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 24f
-                        textAlign = Paint.Align.CENTER
+                        textAlign = android.graphics.Paint.Align.CENTER
                     }
                 )
             }
@@ -944,10 +946,10 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
                 "${yValue.toInt()}",
                 -40f,
                 y + 6f,
-                Paint().apply {
+                android.graphics.Paint().apply {
                     color = android.graphics.Color.GRAY
                     textSize = 24f
-                    textAlign = Paint.Align.LEFT
+                    textAlign = android.graphics.Paint.Align.LEFT
                 }
             )
         }
@@ -991,10 +993,10 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
                     dayLabels[i],
                     x,
                     size.height - 4f,
-                    Paint().apply {
+                    android.graphics.Paint().apply {
                         color = android.graphics.Color.DKGRAY
                         textSize = 24f
-                        textAlign = Paint.Align.CENTER
+                        textAlign = android.graphics.Paint.Align.CENTER
                     }
                 )
             }

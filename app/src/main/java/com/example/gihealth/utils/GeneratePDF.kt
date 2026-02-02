@@ -22,8 +22,12 @@ fun generatePdfReport(
     answers: PdfQuestionnaireAnswers,
     userInfo: UserInfoEntity? = null,
     todayStressRating: Int? = null,
-    weeklyAvgStressRating: Double? = null
-) {
+    weeklyAvgStressRating: Double? = null,
+    todayAbdominalPain: Int? = null,
+    weeklyAvgAbdominalPain: Double? = null
+)
+
+ {
     val pdf = PdfDocument()
 
     val report = ReportBuilder().build(symptoms)
@@ -362,7 +366,25 @@ fun generatePdfReport(
         canvas3.drawText("✔", x, y, paint)
     }
 
-    canvas3.restore()
+     // Abdominal Pain on Alliance Page 1
+
+     todayAbdominalPain?.let { pain ->
+         val label = allianceAbdominalPainToday(pain)
+         ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     weeklyAvgAbdominalPain?.let { avg ->
+         val label = allianceAbdominalPainWeekly(avg)
+         ALLIANCE_AB_PAIN_WEEKLY_POSITIONS[label]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+
+
+     canvas3.restore()
     pdf.finishPage(page3)
 
 
@@ -504,6 +526,19 @@ private val ALLIANCE_WEEKLY_POSITIONS = mapOf(
     "terrible" to Pair(1005f, 567f)
 )
 
+private val ALLIANCE_AB_PAIN_TODAY_POSITIONS = mapOf(
+    "none" to Pair(267f, 678f),
+    "mild" to Pair(267f, 723f),
+    "moderate" to Pair(267f, 765f),
+    "severe" to Pair(267f, 810f)
+)
+
+private val ALLIANCE_AB_PAIN_WEEKLY_POSITIONS = mapOf(
+    "none" to Pair(1005f, 678f),
+    "mild" to Pair(1005f, 723f),
+    "moderate" to Pair(1005f, 765f),
+    "severe" to Pair(1005f, 810f)
+)
 
 private fun q1AllianceWeekly(avg: Double): String {
     val a = avg.coerceIn(1.0, 10.0)
@@ -515,6 +550,27 @@ private fun q1AllianceWeekly(avg: Double): String {
         else -> "terrible"
     }
 }
+
+private fun allianceAbdominalPainToday(severity: Int): String {
+    val s = severity.coerceIn(0, 10)
+    return when {
+        s == 0 -> "none"
+        s <= 3 -> "mild"
+        s <= 6 -> "moderate"
+        else -> "severe"
+    }
+}
+
+private fun allianceAbdominalPainWeekly(avg: Double): String {
+    val a = avg.coerceIn(0.0, 10.0)
+    return when {
+        a == 0.0 -> "none"
+        a < 3.5 -> "mild"
+        a < 6.5 -> "moderate"
+        else -> "severe"
+    }
+}
+
 
 private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
     // Gastrointestinal
