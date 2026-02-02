@@ -216,10 +216,6 @@ fun generatePdfReport(
     pdf.finishPage(page3)
 
 
-
-
-
-
     // page 4 (page 2 of GI Alliance form)
     val page4Bitmap = BitmapFactory.decodeStream(
         context.assets.open("alliance_page_2.png")
@@ -246,10 +242,6 @@ fun generatePdfReport(
     canvas4.restore()
 
     pdf.finishPage(page4)
-
-
-
-
 
     // save the file
     val file = File(context.filesDir, "Health_Report.pdf")
