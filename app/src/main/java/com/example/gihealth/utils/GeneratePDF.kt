@@ -24,13 +24,14 @@ fun generatePdfReport(
     todayStressRating: Int? = null,
     weeklyAvgStressRating: Double? = null,
     todayAbdominalPain: Int? = null,
-    weeklyAvgAbdominalPain: Double? = null
+    weeklyAvgAbdominalPain: Double? = null,
+    symptomsList: List<SymptomEntity>
 )
 
  {
     val pdf = PdfDocument()
 
-    val report = ReportBuilder().build(symptoms)
+    val report = ReportBuilder().build(symptomsList)
     val paint = Paint().apply {
         textSize = 40f
     }

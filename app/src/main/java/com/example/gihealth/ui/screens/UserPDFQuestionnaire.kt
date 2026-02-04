@@ -131,7 +131,7 @@ fun UserPDFQuestionnaire(
         ) {
             Column(modifier = Modifier.weight(1f)){
 
-                EmotionCheckbox("AnxiouPs", answers.anxious){
+                EmotionCheckbox("Anxious", answers.anxious){
                     answers = answers.copy(anxious = it)
                 }
 
@@ -295,6 +295,9 @@ fun UserPDFQuestionnaire(
             maxLines = 6
         )
 
+        val viewModel: SymptomViewModel = viewModel() // gets the ViewModel
+        val symptomsList by viewModel.symptoms.collectAsState()
+
         Button(
             onClick = {
                 // Save questionnaire answers
@@ -307,7 +310,8 @@ fun UserPDFQuestionnaire(
                     answers = reportVM.answers!!,
                     userInfo = reportVM.userInfoSnapshot,
                     todayStressRating = reportVM.todayStressRating,
-                    weeklyAvgStressRating = reportVM.weeklyAvgStressRating
+                    weeklyAvgStressRating = reportVM.weeklyAvgStressRating,
+                    symptomsList = symptomsList
                 )
 
                 navController.navigate("add") {

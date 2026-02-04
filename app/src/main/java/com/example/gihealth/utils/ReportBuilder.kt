@@ -129,6 +129,7 @@ class ReportBuilder {
         }
     }
 
+    // QUESTION 4
     private fun computeRectalBleedingFrequency(symptoms: List<SymptomEntity>): Int {
         val now = System.currentTimeMillis()
         val thirtyDaysAgo = now - 30L * 24 * 60 * 60 * 1000
