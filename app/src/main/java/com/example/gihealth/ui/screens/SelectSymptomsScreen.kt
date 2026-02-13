@@ -58,8 +58,6 @@ fun SelectSymptomsScreen(
         "Fever",
         "Loss of appetite",
         "Night sweats",
-        "Weight gain",
-        "Weight loss",
         "Anxiety",
         "Depression",
         "Double vision",

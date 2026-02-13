@@ -9,7 +9,7 @@ const val FLARE_SEVERITY_THRESHOLD = 3
 
 class ReportBuilder {
 
-    fun build(symptoms: List<SymptomEntity>): PDFReport {
+    fun build(symptoms: List<SymptomEntity>, wellBeing: List<WellBeingEntity>, userInfo: UserInfoEntity?): PDFReport {
 
         // question 1
         val bowelRows = symptoms.filter {
@@ -60,24 +60,20 @@ class ReportBuilder {
         }
 
         // QUESTION 7 - WEIGHT
-        val weightRows = symptoms
-            .filter { it.name == "Weight" }
-            .sortedBy { it.timestamp }
+        val initialWeight = userInfo?.weight?.toFloat()
+        val latestWeight = wellBeing.maxByOrNull { it.timestamp }?.weight?.toFloat()
 
         val weightChange: Int?
         val weightDelta: Int?
 
-        if (weightRows.size >= 2) {
-            val first = weightRows.first().severity.toFloat()
-            val last = weightRows.last().severity.toFloat()
-
+        if (initialWeight != null && latestWeight != null) {
             weightChange = when {
-                last > first -> 0   // Increased
-                last < first -> 1   // Decreased
-                else -> 2           // Stayed the Same
+                latestWeight > initialWeight -> 0   // Increased
+                latestWeight < initialWeight -> 1   // Decreased
+                else -> 2                           // Stayed the Same
             }
 
-            weightDelta = kotlin.math.abs(last - first).roundToInt()
+            weightDelta = kotlin.math.abs(latestWeight - initialWeight).roundToInt()
         } else {
             weightChange = null
             weightDelta = null

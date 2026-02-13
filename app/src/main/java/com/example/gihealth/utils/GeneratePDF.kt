@@ -28,13 +28,14 @@ fun generatePdfReport(
     weeklyAvgStressRating: Double? = null,
     todayAbdominalPain: Int? = null,
     weeklyAvgAbdominalPain: Double? = null,
-    symptomsList: List<SymptomEntity>
+    symptomsList: List<SymptomEntity>,
+    wellBeingList: List<WellBeingEntity>,
 )
 
  {
     val pdf = PdfDocument()
 
-    val report = ReportBuilder().build(symptomsList)
+    val report = ReportBuilder().build(symptomsList, wellBeingList, userInfo)
     val paint = Paint().apply {
         textSize = 40f
     }
@@ -762,10 +763,10 @@ private fun drawMultilineText(
 
 }
 
-private const val WEIGHT_Y = appetiteY + 200f
+private const val WEIGHT_Y = appetiteY + 230f
 
-private const val WEIGHT_LBS_X = 1000f
-private const val WEIGHT_LBS_Y = WEIGHT_Y + 90f
+private const val WEIGHT_LBS_X = 975f
+private const val WEIGHT_LBS_Y = WEIGHT_Y + 125f
 
 
 private const val COMPLICATION_COL1_X = 932f

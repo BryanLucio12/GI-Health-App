@@ -15,11 +15,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gihealth.data.SymptomEntity
-import com.example.gihealth.data.UserInfoEntity
+import com.example.gihealth.data.*
 import com.example.gihealth.models.PdfQuestionnaireAnswers
 import com.example.gihealth.ui.viewmodel.ReportViewModel
 import com.example.gihealth.utils.generatePdfReport
+import androidx.compose.runtime.livedata.observeAsState
 import kotlin.Int
 
 @Composable
@@ -295,8 +295,14 @@ fun UserPDFQuestionnaire(
             maxLines = 6
         )
 
-        val viewModel: SymptomViewModel = viewModel() // gets the ViewModel
-        val symptomsList by viewModel.symptoms.collectAsState()
+        val symptomViewModel: SymptomViewModel = viewModel() // gets the ViewModel
+        val symptomsList by symptomViewModel.symptoms.collectAsState()
+
+        val wellBeingViewModel: WellBeingViewModel = viewModel()
+        val wellBeingList by wellBeingViewModel.entries.observeAsState(emptyList())
+
+        val userInfoViewModel: UserInfoViewModel = viewModel()
+        val userInfoList by userInfoViewModel.userInfo.observeAsState(null)
 
         Button(
             onClick = {
@@ -308,10 +314,11 @@ fun UserPDFQuestionnaire(
                     context = context,
                     symptoms = reportVM.symptoms,
                     answers = reportVM.answers!!,
-                    userInfo = reportVM.userInfoSnapshot,
+                    userInfo = userInfoList,
                     todayStressRating = reportVM.todayStressRating,
                     weeklyAvgStressRating = reportVM.weeklyAvgStressRating,
-                    symptomsList = symptomsList
+                    symptomsList = symptomsList,
+                    wellBeingList = wellBeingList,
                 )
 
                 navController.navigate("add") {
