@@ -10,7 +10,10 @@ import com.example.gihealth.models.PdfQuestionnaireAnswers
 import com.example.gihealth.data.*
 import kotlin.math.roundToInt
 //import com.example.gihealth.utils.ReportBuilder
-
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
+import java.io.OutputStream
 
 
 // import used to make answers
@@ -434,6 +437,23 @@ fun generatePdfReport(
     FileOutputStream(file).use { out ->
         pdf.writeTo(out)
     }
+
+     val fileName = "Health_Report_${System.currentTimeMillis()}.pdf"
+     val contentValues = ContentValues().apply {
+         put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+         put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+         put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+     }
+
+     val resolver = context.contentResolver
+     val uri = resolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+
+     uri?.let {
+         resolver.openOutputStream(it)?.use { outputStream ->
+             pdf.writeTo(outputStream)
+         }
+         Toast.makeText(context, "PDF saved to Downloads", Toast.LENGTH_LONG).show()
+     }
 
     pdf.close()
 
