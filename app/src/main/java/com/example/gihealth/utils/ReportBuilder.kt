@@ -79,6 +79,17 @@ class ReportBuilder {
             weightDelta = null
         }
 
+        // GI ALLIANCE QUESTION 1
+        val todayAbdominalPain = abdominalPainRows.maxByOrNull { it.timestamp }?.severity?.toFloat()
+        val weeklyAvgAbdominalPain = if (abdominalPainRows.isNotEmpty()) {
+            abdominalPainRows.map { it.severity.toFloat() }.average().toFloat()
+        } else 0f
+
+        // GI ALLIANCE QUESTION 2
+        val stressRatings = wellBeing.mapNotNull { it.stressRating?.toFloat() }
+        val todayStressRating = stressRatings.maxOrNull()
+        val weeklyAvgStressRating = if (stressRatings.isNotEmpty()) stressRatings.average().toFloat() else 0f
+
         // return PDF ready model
         return PDFReport(
             bowelMovementsPerDay = avgBowelMovements,
@@ -87,7 +98,11 @@ class ReportBuilder {
             rectalBleedingFrequency = rectalBleedingFrequency,
             nauseaChange = nauseaChange,
             weightChange = weightChange,
-            weightDeltaLbs = weightDelta
+            weightDeltaLbs = weightDelta,
+            todayAbdominalPain = todayAbdominalPain,
+            weeklyAvgAbdominalPain = weeklyAvgAbdominalPain,
+            todayStressRating = todayStressRating,
+            weeklyAvgStressRating = weeklyAvgStressRating
         )
     }
 

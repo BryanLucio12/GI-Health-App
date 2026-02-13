@@ -315,8 +315,6 @@ fun UserPDFQuestionnaire(
                     symptoms = reportVM.symptoms,
                     answers = reportVM.answers!!,
                     userInfo = userInfoList,
-                    todayStressRating = reportVM.todayStressRating,
-                    weeklyAvgStressRating = reportVM.weeklyAvgStressRating,
                     symptomsList = symptomsList,
                     wellBeingList = wellBeingList,
                 )

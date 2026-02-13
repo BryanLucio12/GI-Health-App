@@ -24,10 +24,6 @@ fun generatePdfReport(
     symptoms: List<SymptomEntity>,
     answers: PdfQuestionnaireAnswers,
     userInfo: UserInfoEntity? = null,
-    todayStressRating: Int? = null,
-    weeklyAvgStressRating: Double? = null,
-    todayAbdominalPain: Int? = null,
-    weeklyAvgAbdominalPain: Double? = null,
     symptomsList: List<SymptomEntity>,
     wellBeingList: List<WellBeingEntity>,
 )
@@ -360,34 +356,35 @@ fun generatePdfReport(
         ALLIANCE_DOB_Y,
         headerPaint
     )
-    todayStressRating?.let { stress ->
-        val option = q1AllianceToday(stress)
-        val (x, y) = ALLIANCE_TODAY_POSITIONS[option] ?: return@let
-        canvas3.drawText("✔", x, y, paint)
-    }
-    weeklyAvgStressRating?.let { avg ->
-        val option = q1AllianceWeekly(avg)
-        val (x, y) = ALLIANCE_WEEKLY_POSITIONS[option] ?: return@let
-        canvas3.drawText("✔", x, y, paint)
-    }
 
-     // Abdominal Pain on Alliance Page 1
+     // Stress rating on alliance page 1 (page 3)
+     report.todayStressRating?.let { stress ->
+         // Convert Float? to Int for q1AllianceToday
+         val option = q1AllianceToday(stress.roundToInt())
+         val (x, y) = ALLIANCE_TODAY_POSITIONS[option] ?: return@let
+         canvas3.drawText("✔", x, y, paint)
+     }
 
-     todayAbdominalPain?.let { pain ->
-         val label = allianceAbdominalPainToday(pain)
+     report.weeklyAvgStressRating?.let { avg ->
+         val option = q1AllianceWeekly(avg.toDouble())
+         val (x, y) = ALLIANCE_WEEKLY_POSITIONS[option] ?: return@let
+         canvas3.drawText("✔", x, y, paint)
+     }
+
+     // Abdominal Pain on Alliance Page 1 (page 3)
+     report.todayAbdominalPain?.let { pain ->
+         val label = allianceAbdominalPainToday(pain.roundToInt())
          ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
              canvas3.drawText("✔", x, y, paint)
          }
      }
 
-     weeklyAvgAbdominalPain?.let { avg ->
-         val label = allianceAbdominalPainWeekly(avg)
+     report.weeklyAvgAbdominalPain?.let { avg ->
+         val label = allianceAbdominalPainWeekly(avg.toDouble())
          ALLIANCE_AB_PAIN_WEEKLY_POSITIONS[label]?.let { (x, y) ->
              canvas3.drawText("✔", x, y, paint)
          }
      }
-
-
 
      canvas3.restore()
     pdf.finishPage(page3)
