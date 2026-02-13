@@ -217,7 +217,7 @@ fun generatePdfReport(
 
     report.nauseaChange?.let { value ->
         val x = NAUSEA_X[value] ?: return@let
-        canvas1.drawText("✔", x, NAUSEA_Y, paint)
+        canvas2.drawText("✔", x, NAUSEA_Y, paint)
     }
 
     report.weightChange?.let { value ->
@@ -699,7 +699,7 @@ private const val RECTAL_USUAL_Y = 3060f
 
 
 // Nausea (Page 1 or wherever this question appears)
-private const val NAUSEA_Y = 1900f
+private const val NAUSEA_Y = 1815f
 
 private val NAUSEA_X = mapOf(
     0 to 932f,   // Increased

@@ -42,7 +42,8 @@ class ReportBuilder {
         val flaresPastYear = countFlaresPastYear(symptoms)
 
         val rectalBleedingFrequency = computeRectalBleedingFrequency(symptoms)
-        // return PDF-ready model
+
+        // QUESTION 7 - NAUSEA
         val nauseaRows = symptoms.filter { it.name == "Nausea" }
 
         val nauseaChange = if (nauseaRows.size >= 2) {
@@ -58,6 +59,7 @@ class ReportBuilder {
             null
         }
 
+        // QUESTION 7 - WEIGHT
         val weightRows = symptoms
             .filter { it.name == "Weight" }
             .sortedBy { it.timestamp }
@@ -81,7 +83,7 @@ class ReportBuilder {
             weightDelta = null
         }
 
-
+        // return PDF ready model
         return PDFReport(
             bowelMovementsPerDay = avgBowelMovements,
             avgAbdominalPain = avgAbdominalPain,
