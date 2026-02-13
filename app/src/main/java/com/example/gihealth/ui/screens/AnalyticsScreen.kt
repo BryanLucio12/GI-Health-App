@@ -131,68 +131,7 @@ fun AnalyticsScreen(
                 // button to generate the pdf report
                 Button(
                     onClick = {
-                        val zone = ZoneId.systemDefault()
-                        val today = LocalDate.now()
-                        val startDay = today.minusDays(6)
-
-                        val last7 = wellBeingEntries.filter { entry ->
-                            val d = Instant.ofEpochMilli(entry.timestamp)
-                                .atZone(zone)
-                                .toLocalDate()
-                            d in startDay..today
-                        }
-
-                        val latestPerDay = last7
-                            .groupBy { entry ->
-                                Instant.ofEpochMilli(entry.timestamp)
-                                    .atZone(zone)
-                                    .toLocalDate()
-                            }
-                            .mapValues { (_, list) ->
-                                list.maxByOrNull { it.timestamp }!!
-                            }
-
-                        val todayStressRating: Int? = latestPerDay[today]?.stressRating
-
-                        // Weekly average
-                        val weeklyAvgStressRating: Double? =
-                            if (latestPerDay.isNotEmpty())
-                                latestPerDay.values.map { it.stressRating }.average()
-                            else null
-
-                        val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
-
-                        val startOfTodayMillis =
-                            today.atStartOfDay(zone).toInstant().toEpochMilli()
-
-                        reportVM.todayAbdominalPain =
-                            abdominalPainLogs
-                                .filter { it.timestamp >= startOfTodayMillis }
-                                .maxByOrNull { it.timestamp }
-                                ?.severity
-                                ?: 0
-
-                        val dailyPainValues = (0..6).map { offset ->
-                            val date = today.minusDays(offset.toLong())
-
-                            val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
-                            val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-
-                            abdominalPainLogs
-                                .filter { it.timestamp in dayStart until dayEnd }
-                                .maxByOrNull { it.timestamp }
-                                ?.severity
-                                ?: 0
-                        }
-
-                        reportVM.weeklyAvgAbdominalPain =
-                            if (dailyPainValues.isNotEmpty())
-                                dailyPainValues.average()
-                            else null
-
                         reportVM.symptoms = symptomsList
-                        reportVM.todayStressRating = todayStressRating
-                        reportVM.weeklyAvgStressRating = weeklyAvgStressRating
                         reportVM.userInfoSnapshot = userInfo   // UserInfoEntity?
 
                         onGeneratePdf()

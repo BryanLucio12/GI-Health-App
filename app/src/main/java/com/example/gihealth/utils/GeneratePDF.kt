@@ -24,17 +24,14 @@ fun generatePdfReport(
     symptoms: List<SymptomEntity>,
     answers: PdfQuestionnaireAnswers,
     userInfo: UserInfoEntity? = null,
-    todayStressRating: Int? = null,
-    weeklyAvgStressRating: Double? = null,
-    todayAbdominalPain: Int? = null,
-    weeklyAvgAbdominalPain: Double? = null,
-    symptomsList: List<SymptomEntity>
+    symptomsList: List<SymptomEntity>,
+    wellBeingList: List<WellBeingEntity>,
 )
 
  {
     val pdf = PdfDocument()
 
-    val report = ReportBuilder().build(symptomsList)
+    val report = ReportBuilder().build(symptomsList, wellBeingList, userInfo)
     val paint = Paint().apply {
         textSize = 40f
     }
@@ -220,7 +217,7 @@ fun generatePdfReport(
 
     report.nauseaChange?.let { value ->
         val x = NAUSEA_X[value] ?: return@let
-        canvas1.drawText("✔", x, NAUSEA_Y, paint)
+        canvas2.drawText("✔", x, NAUSEA_Y, paint)
     }
 
     report.weightChange?.let { value ->
@@ -359,34 +356,35 @@ fun generatePdfReport(
         ALLIANCE_DOB_Y,
         headerPaint
     )
-    todayStressRating?.let { stress ->
-        val option = q1AllianceToday(stress)
-        val (x, y) = ALLIANCE_TODAY_POSITIONS[option] ?: return@let
-        canvas3.drawText("✔", x, y, paint)
-    }
-    weeklyAvgStressRating?.let { avg ->
-        val option = q1AllianceWeekly(avg)
-        val (x, y) = ALLIANCE_WEEKLY_POSITIONS[option] ?: return@let
-        canvas3.drawText("✔", x, y, paint)
-    }
 
-     // Abdominal Pain on Alliance Page 1
+     // Stress rating on alliance page 1 (page 3)
+     report.todayStressRating?.let { stress ->
+         // Convert Float? to Int for q1AllianceToday
+         val option = q1AllianceToday(stress.roundToInt())
+         val (x, y) = ALLIANCE_TODAY_POSITIONS[option] ?: return@let
+         canvas3.drawText("✔", x, y, paint)
+     }
 
-     todayAbdominalPain?.let { pain ->
-         val label = allianceAbdominalPainToday(pain)
+     report.weeklyAvgStressRating?.let { avg ->
+         val option = q1AllianceWeekly(avg.toDouble())
+         val (x, y) = ALLIANCE_WEEKLY_POSITIONS[option] ?: return@let
+         canvas3.drawText("✔", x, y, paint)
+     }
+
+     // Abdominal Pain on Alliance Page 1 (page 3)
+     report.todayAbdominalPain?.let { pain ->
+         val label = allianceAbdominalPainToday(pain.roundToInt())
          ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
              canvas3.drawText("✔", x, y, paint)
          }
      }
 
-     weeklyAvgAbdominalPain?.let { avg ->
-         val label = allianceAbdominalPainWeekly(avg)
+     report.weeklyAvgAbdominalPain?.let { avg ->
+         val label = allianceAbdominalPainWeekly(avg.toDouble())
          ALLIANCE_AB_PAIN_WEEKLY_POSITIONS[label]?.let { (x, y) ->
              canvas3.drawText("✔", x, y, paint)
          }
      }
-
-
 
      canvas3.restore()
     pdf.finishPage(page3)
@@ -719,7 +717,7 @@ private const val RECTAL_USUAL_Y = 3060f
 
 
 // Nausea (Page 1 or wherever this question appears)
-private const val NAUSEA_Y = 1900f
+private const val NAUSEA_Y = 1815f
 
 private val NAUSEA_X = mapOf(
     0 to 932f,   // Increased
@@ -762,10 +760,10 @@ private fun drawMultilineText(
 
 }
 
-private const val WEIGHT_Y = appetiteY + 200f
+private const val WEIGHT_Y = appetiteY + 230f
 
-private const val WEIGHT_LBS_X = 1000f
-private const val WEIGHT_LBS_Y = WEIGHT_Y + 90f
+private const val WEIGHT_LBS_X = 975f
+private const val WEIGHT_LBS_Y = WEIGHT_Y + 125f
 
 
 private const val COMPLICATION_COL1_X = 932f

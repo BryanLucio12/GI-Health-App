@@ -38,3 +38,4 @@ class WellBeingViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 }
+

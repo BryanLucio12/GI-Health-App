@@ -7,5 +7,9 @@ data class PDFReport(
     val rectalBleedingFrequency: Int?,
     val nauseaChange: Int?,
     val weightChange: Int?,
-    val weightDeltaLbs: Int?
+    val weightDeltaLbs: Int?,
+    val todayAbdominalPain: Float?,
+    val weeklyAvgAbdominalPain: Float?,
+    val todayStressRating: Float?,
+    val weeklyAvgStressRating: Float?
 )

@@ -9,7 +9,7 @@ const val FLARE_SEVERITY_THRESHOLD = 3
 
 class ReportBuilder {
 
-    fun build(symptoms: List<SymptomEntity>): PDFReport {
+    fun build(symptoms: List<SymptomEntity>, wellBeing: List<WellBeingEntity>, userInfo: UserInfoEntity?): PDFReport {
 
         // question 1
         val bowelRows = symptoms.filter {
@@ -42,7 +42,8 @@ class ReportBuilder {
         val flaresPastYear = countFlaresPastYear(symptoms)
 
         val rectalBleedingFrequency = computeRectalBleedingFrequency(symptoms)
-        // return PDF-ready model
+
+        // QUESTION 7 - NAUSEA
         val nauseaRows = symptoms.filter { it.name == "Nausea" }
 
         val nauseaChange = if (nauseaRows.size >= 2) {
@@ -58,30 +59,38 @@ class ReportBuilder {
             null
         }
 
-        val weightRows = symptoms
-            .filter { it.name == "Weight" }
-            .sortedBy { it.timestamp }
+        // QUESTION 7 - WEIGHT
+        val initialWeight = userInfo?.weight?.toFloat()
+        val latestWeight = wellBeing.maxByOrNull { it.timestamp }?.weight?.toFloat()
 
         val weightChange: Int?
         val weightDelta: Int?
 
-        if (weightRows.size >= 2) {
-            val first = weightRows.first().severity.toFloat()
-            val last = weightRows.last().severity.toFloat()
-
+        if (initialWeight != null && latestWeight != null) {
             weightChange = when {
-                last > first -> 0   // Increased
-                last < first -> 1   // Decreased
-                else -> 2           // Stayed the Same
+                latestWeight > initialWeight -> 0   // Increased
+                latestWeight < initialWeight -> 1   // Decreased
+                else -> 2                           // Stayed the Same
             }
 
-            weightDelta = kotlin.math.abs(last - first).roundToInt()
+            weightDelta = kotlin.math.abs(latestWeight - initialWeight).roundToInt()
         } else {
             weightChange = null
             weightDelta = null
         }
 
+        // GI ALLIANCE QUESTION 1
+        val todayAbdominalPain = abdominalPainRows.maxByOrNull { it.timestamp }?.severity?.toFloat()
+        val weeklyAvgAbdominalPain = if (abdominalPainRows.isNotEmpty()) {
+            abdominalPainRows.map { it.severity.toFloat() }.average().toFloat()
+        } else 0f
 
+        // GI ALLIANCE QUESTION 2
+        val stressRatings = wellBeing.mapNotNull { it.stressRating?.toFloat() }
+        val todayStressRating = stressRatings.maxOrNull()
+        val weeklyAvgStressRating = if (stressRatings.isNotEmpty()) stressRatings.average().toFloat() else 0f
+
+        // return PDF ready model
         return PDFReport(
             bowelMovementsPerDay = avgBowelMovements,
             avgAbdominalPain = avgAbdominalPain,
@@ -89,7 +98,11 @@ class ReportBuilder {
             rectalBleedingFrequency = rectalBleedingFrequency,
             nauseaChange = nauseaChange,
             weightChange = weightChange,
-            weightDeltaLbs = weightDelta
+            weightDeltaLbs = weightDelta,
+            todayAbdominalPain = todayAbdominalPain,
+            weeklyAvgAbdominalPain = weeklyAvgAbdominalPain,
+            todayStressRating = todayStressRating,
+            weeklyAvgStressRating = weeklyAvgStressRating
         )
     }
 
