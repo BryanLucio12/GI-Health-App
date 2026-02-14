@@ -357,30 +357,83 @@ fun generatePdfReport(
         headerPaint
     )
 
-     // Stress rating on alliance page 1 (page 3)
-     report.todayStressRating?.let { stress ->
-         // Convert Float? to Int for q1AllianceToday
-         val option = q1AllianceToday(stress.roundToInt())
-         val (x, y) = ALLIANCE_TODAY_POSITIONS[option] ?: return@let
-         canvas3.drawText("✔", x, y, paint)
+     val zone = java.time.ZoneId.systemDefault()
+     val today = java.time.LocalDate.now()
+     val startDay = today.minusDays(6)
+
+// Stress
+     val last7WellBeing = wellBeingList.filter { entry ->
+         val d = java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
+         d in startDay..today
      }
 
-     report.weeklyAvgStressRating?.let { avg ->
-         val option = q1AllianceWeekly(avg.toDouble())
-         val (x, y) = ALLIANCE_WEEKLY_POSITIONS[option] ?: return@let
-         canvas3.drawText("✔", x, y, paint)
+     val latestStressPerDay: Map<java.time.LocalDate, WellBeingEntity> =
+         last7WellBeing
+             .groupBy { entry ->
+                 java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
+             }
+             .mapValues { (_, list) -> list.maxByOrNull { it.timestamp }!! }
+
+     val todayStressRatingLocal: Int? = latestStressPerDay[today]?.stressRating
+
+     val weeklyAvgStressRatingLocal: Double? =
+         if (latestStressPerDay.isNotEmpty())
+             latestStressPerDay.values.map { it.stressRating }.average()
+         else
+             null
+
+// Abdominal pain
+     val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
+
+// today pain
+     val startOfTodayMillis = today.atStartOfDay(zone).toInstant().toEpochMilli()
+     val todayAbdominalPainLocal: Int =
+         abdominalPainLogs
+             .filter { it.timestamp >= startOfTodayMillis }
+             .maxByOrNull { it.timestamp }
+             ?.severity
+             ?: 0
+
+// weekly pain
+     val dailyPainValues = (0..6).map { offset ->
+         val date = today.minusDays(offset.toLong())
+         val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+         val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+
+         abdominalPainLogs
+             .filter { it.timestamp in dayStart until dayEnd }
+             .maxByOrNull { it.timestamp }
+             ?.severity
+             ?: 0
+     }
+     val weeklyAvgAbdominalPainLocal: Double = dailyPainValues.average()
+
+
+     // Stress rating
+     todayStressRatingLocal?.let { stress ->
+         val option = q1AllianceToday(stress)
+         ALLIANCE_TODAY_POSITIONS[option]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
      }
 
-     // Abdominal Pain on Alliance Page 1 (page 3)
-     report.todayAbdominalPain?.let { pain ->
-         val label = allianceAbdominalPainToday(pain.roundToInt())
+     weeklyAvgStressRatingLocal?.let { avg ->
+         val option = q1AllianceWeekly(avg)
+         ALLIANCE_WEEKLY_POSITIONS[option]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     // Abdominal Pain
+     run {
+         val label = allianceAbdominalPainToday(todayAbdominalPainLocal)
          ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
              canvas3.drawText("✔", x, y, paint)
          }
      }
 
-     report.weeklyAvgAbdominalPain?.let { avg ->
-         val label = allianceAbdominalPainWeekly(avg.toDouble())
+     run {
+         val label = allianceAbdominalPainWeekly(weeklyAvgAbdominalPainLocal)
          ALLIANCE_AB_PAIN_WEEKLY_POSITIONS[label]?.let { (x, y) ->
              canvas3.drawText("✔", x, y, paint)
          }
