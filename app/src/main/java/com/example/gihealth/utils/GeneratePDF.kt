@@ -361,7 +361,7 @@ fun generatePdfReport(
      val today = java.time.LocalDate.now()
      val startDay = today.minusDays(6)
 
-// ---- Stress (same logic as before: latest per day) ----
+// Stress
      val last7WellBeing = wellBeingList.filter { entry ->
          val d = java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
          d in startDay..today
@@ -382,10 +382,10 @@ fun generatePdfReport(
          else
              null
 
-// ---- Abdominal pain (missing day = 0) ----
+// Abdominal pain
      val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
 
-// today pain = latest today or 0
+// today pain
      val startOfTodayMillis = today.atStartOfDay(zone).toInstant().toEpochMilli()
      val todayAbdominalPainLocal: Int =
          abdominalPainLogs
@@ -394,7 +394,7 @@ fun generatePdfReport(
              ?.severity
              ?: 0
 
-// weekly pain = 7 days including zeros
+// weekly pain
      val dailyPainValues = (0..6).map { offset ->
          val date = today.minusDays(offset.toLong())
          val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -409,7 +409,7 @@ fun generatePdfReport(
      val weeklyAvgAbdominalPainLocal: Double = dailyPainValues.average()
 
 
-     // Stress rating on alliance page 1 (page 3)
+     // Stress rating
      todayStressRatingLocal?.let { stress ->
          val option = q1AllianceToday(stress)
          ALLIANCE_TODAY_POSITIONS[option]?.let { (x, y) ->
@@ -424,7 +424,7 @@ fun generatePdfReport(
          }
      }
 
-     // Abdominal Pain on Alliance Page 1 (page 3)
+     // Abdominal Pain
      run {
          val label = allianceAbdominalPainToday(todayAbdominalPainLocal)
          ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
