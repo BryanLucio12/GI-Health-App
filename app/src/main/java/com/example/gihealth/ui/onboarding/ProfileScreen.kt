@@ -21,9 +21,9 @@ import com.example.gihealth.data.UserInfoViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
+
     val context = LocalContext.current
 
-    // ViewModel
     val userInfoViewModel: UserInfoViewModel = viewModel(
         factory = ViewModelProvider.AndroidViewModelFactory(
             context.applicationContext as Application
@@ -37,32 +37,26 @@ fun ProfileScreen(navController: NavController) {
     )
 
     val wellBeingEntries by wellBeingViewModel.entries.observeAsState(emptyList())
+    val latestWeight = wellBeingEntries.maxByOrNull { it.timestamp }?.weight
 
-    val latestWeight = wellBeingEntries
-        .maxByOrNull { it.timestamp }
-        ?.weight
-
-
-    // User Data
     val userInfo by userInfoViewModel.userInfo.observeAsState()
 
-    // Track edit mode
     var isEditing by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     // Editable fields
     var name by remember { mutableStateOf("") }
-    var age by remember { mutableStateOf("") }
+    var dob by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("") }
     var bloodType by remember { mutableStateOf("") }
     var disease by remember { mutableStateOf("") }
     var triggers by remember { mutableStateOf("") }
 
-    // When first loading OR toggling edit mode on:
     LaunchedEffect(userInfo, isEditing) {
         if (userInfo != null && !isEditing) {
             name = userInfo!!.name
-            age = userInfo!!.age.toString()
+            dob = userInfo!!.dob
             weight = userInfo!!.weight.toString()
             gender = userInfo!!.gender
             bloodType = userInfo!!.bloodType
@@ -78,28 +72,25 @@ fun ProfileScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Text(
-            text = "Profile",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        )
-
+        Text("Profile", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(30.dp))
 
-
         if (!isEditing) {
-            ProfileField(label = "Name", value = userInfo?.name ?: "")
-            ProfileField(label = "Age", value = userInfo?.age?.toString() ?: "")
+
+            ProfileField("Name", userInfo?.name ?: "")
+            ProfileField("Date of Birth", userInfo?.dob ?: "—")
+
             ProfileField(
-                label = "Weight",
-                value = latestWeight?.let { "${it.toInt()} lbs" }
+                "Weight",
+                latestWeight?.let { "${it.toInt()} lbs" }
                     ?: userInfo?.weight?.toString()
                     ?: "—"
             )
-            ProfileField(label = "Gender", value = userInfo?.gender ?: "")
-            ProfileField(label = "Blood Type", value = userInfo?.bloodType ?: "")
-            ProfileField(label = "Conditions", value = userInfo?.disease ?: "")
-            ProfileField(label = "Triggers", value = userInfo?.triggers ?: "")
+
+            ProfileField("Gender", userInfo?.gender ?: "")
+            ProfileField("Blood Type", userInfo?.bloodType ?: "")
+            ProfileField("Conditions", userInfo?.disease ?: "")
+            ProfileField("Triggers", userInfo?.triggers ?: "")
 
             Spacer(modifier = Modifier.height(30.dp))
 
@@ -110,38 +101,40 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 Text("Edit Profile", color = Color.White)
             }
-        }
-        else {
 
+        } else {
 
-            // Name
+            // NAME
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Name") },
+                isError = name.isBlank(),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Age
+            // DOB
             OutlinedTextField(
-                value = age,
-                onValueChange = { age = it.filter { c -> c.isDigit() } },
-                label = { Text("Age") },
+                value = dob,
+                onValueChange = { if (it.length <= 10) dob = it },
+                label = { Text("Date of Birth (MM/DD/YYYY)") },
+                isError = dob.isBlank(),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Weight
+            // WEIGHT
             OutlinedTextField(
                 value = weight,
                 onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' } },
                 label = { Text("Weight (lbs)") },
+                isError = weight.isBlank(),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            //Gender drop down
+            // GENDER
             var expandedGender by remember { mutableStateOf(false) }
             val genderOptions = listOf("Male", "Female", "Non-binary", "Prefer not to say")
 
@@ -154,10 +147,9 @@ fun ProfileScreen(navController: NavController) {
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Gender") },
+                    isError = gender.isBlank(),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGender) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedGender,
@@ -174,9 +166,10 @@ fun ProfileScreen(navController: NavController) {
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            //Blood type dropdown
+            // BLOOD TYPE
             var expandedBloodType by remember { mutableStateOf(false) }
             val bloodTypeOptions = listOf(
                 "A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "Not sure"
@@ -191,10 +184,9 @@ fun ProfileScreen(navController: NavController) {
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Blood Type") },
+                    isError = bloodType.isBlank(),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBloodType) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedBloodType,
@@ -211,26 +203,38 @@ fun ProfileScreen(navController: NavController) {
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Disease
+            // CONDITIONS
             OutlinedTextField(
                 value = disease,
                 onValueChange = { disease = it },
                 label = { Text("Conditions") },
+                isError = disease.isBlank(),
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Triggers
+            // TRIGGERS (OPTIONAL)
             OutlinedTextField(
                 value = triggers,
                 onValueChange = { triggers = it },
-                label = { Text("Triggers") },
+                label = { Text("Triggers (optional)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -238,15 +242,32 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 Button(
                     onClick = {
+
+                        if (
+                            name.isBlank() ||
+                            dob.isBlank() ||
+                            weight.isBlank() ||
+                            gender.isBlank() ||
+                            bloodType.isBlank() ||
+                            disease.isBlank()
+                        ) {
+                            errorMessage = "Please complete all required fields."
+                            return@Button
+                        }
+
+                        errorMessage = ""
+
                         userInfoViewModel.saveUserInfo(
                             name = name,
-                            age = age.toIntOrNull() ?: 0,
+                            age = 0,
                             bloodType = bloodType,
                             weight = weight.toFloatOrNull() ?: 0f,
                             gender = gender,
                             disease = disease,
-                            triggers = triggers
+                            triggers = triggers,
+                            dob = dob
                         )
+
                         isEditing = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58))
@@ -254,9 +275,7 @@ fun ProfileScreen(navController: NavController) {
                     Text("Save", color = Color.White)
                 }
 
-                OutlinedButton(
-                    onClick = { isEditing = false }
-                ) {
+                OutlinedButton(onClick = { isEditing = false }) {
                     Text("Cancel")
                 }
             }
