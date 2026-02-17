@@ -43,7 +43,8 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
         weight: Float,
         gender: String,
         disease: String,
-        triggers: String
+        triggers: String,
+        dob: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentInfo = userInfoDao.getUserInfo()
@@ -56,7 +57,8 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
                 gender = gender,
                 disease = disease,
                 triggers = triggers,
-                pin = currentInfo?.pin ?: 0 // save pin if set
+                pin = currentInfo?.pin ?: 0 ,// save pin if set
+                dob = dob
             )
             userInfoDao.insert(updatedInfo)
             _userInfo.postValue(updatedInfo)
@@ -77,7 +79,8 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
                     gender = "",
                     disease = "",
                     triggers = "",
-                    pin = pin
+                    pin = pin,
+                    dob = ""
                 )
             userInfoDao.insert(updatedInfo)
             _userInfo.postValue(updatedInfo)
