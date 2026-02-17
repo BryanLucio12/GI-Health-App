@@ -361,46 +361,45 @@ fun generatePdfReport(
      val today = java.time.LocalDate.now()
      val startDay = today.minusDays(6)
 
-// Filter to last 7 days (shared for stools + stress)
+// Stress
      val last7WellBeing = wellBeingList.filter { entry ->
-         val d = java.time.Instant.ofEpochMilli(entry.timestamp)
-             .atZone(zone)
-             .toLocalDate()
+         val d = java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
          d in startDay..today
      }
 
-// Latest entry per day (shared)
-     val latestWellBeingPerDay: Map<java.time.LocalDate, WellBeingEntity> =
+     val latestStressPerDay: Map<java.time.LocalDate, WellBeingEntity> =
          last7WellBeing
              .groupBy { entry ->
-                 java.time.Instant.ofEpochMilli(entry.timestamp)
-                     .atZone(zone)
-                     .toLocalDate()
+                 java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
              }
              .mapValues { (_, list) -> list.maxByOrNull { it.timestamp }!! }
 
-// ----- STOOLS -----
-     val todayLooseStools: Int = latestWellBeingPerDay[today]?.looseStoolsCount ?: 0
-
-     val weeklyLooseStoolsTotal: Int = (0..6).sumOf { i ->
-         val day = startDay.plusDays(i.toLong())
-         latestWellBeingPerDay[day]?.looseStoolsCount ?: 0
-     }
-
-// ----- STRESS -----
-     val todayStressRatingLocal: Int? = latestWellBeingPerDay[today]?.stressRating
+     val todayStressRatingLocal: Int? = latestStressPerDay[today]?.stressRating
 
      val weeklyAvgStressRatingLocal: Double? =
-         if (latestWellBeingPerDay.isNotEmpty())
-             latestWellBeingPerDay.values.map { it.stressRating }.average()
+         if (latestStressPerDay.isNotEmpty())
+             latestStressPerDay.values.map { it.stressRating }.average()
          else
              null
 
+     //COMMENTED OUT UNTIL FIXED MERGE
 
-     // Abdominal pain
+  //   answers.generalWellBeing?.let { value ->
+   //      ALLIANCE_GENERAL_WELL_BEING_POSITIONS[value]?.let { (x, y) ->
+    //         canvas3.drawText("✔", x, y, paint)
+   //      }
+   //  }
+   //  answers.rectalBleedingToday?.let { value ->
+   //      ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS[value]?.let { (x, y) ->
+  //           canvas3.drawText("✔", x, y, paint)
+ //        }
+ //    }
+
+
+// Abdominal pain
      val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
 
-    // today pain
+// today pain
      val startOfTodayMillis = today.atStartOfDay(zone).toInstant().toEpochMilli()
      val todayAbdominalPainLocal: Int =
          abdominalPainLogs
@@ -409,7 +408,7 @@ fun generatePdfReport(
              ?.severity
              ?: 0
 
-    // weekly pain
+// weekly pain
      val dailyPainValues = (0..6).map { offset ->
          val date = today.minusDays(offset.toLong())
          val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
@@ -422,8 +421,6 @@ fun generatePdfReport(
              ?: 0
      }
      val weeklyAvgAbdominalPainLocal: Double = dailyPainValues.average()
-
-
 
 
      // Stress rating
@@ -455,10 +452,6 @@ fun generatePdfReport(
              canvas3.drawText("✔", x, y, paint)
          }
      }
-     val stoolTextPaint = Paint(paint).apply { textSize = 36f }
-
-     canvas3.drawText(todayLooseStools.toString(), STOOLS_TODAY_X, STOOLS_TODAY_Y, stoolTextPaint)
-     canvas3.drawText(weeklyLooseStoolsTotal.toString(), STOOLS_WEEK_X, STOOLS_WEEK_Y, stoolTextPaint)
 
      canvas3.restore()
     pdf.finishPage(page3)
@@ -778,10 +771,6 @@ private const val ALLIANCE_NAME_Y = 290f
 private const val ALLIANCE_DOB_X = 1200f
 private const val ALLIANCE_DOB_Y = 290f
 
-private const val STOOLS_TODAY_X = 550f
-private const val STOOLS_TODAY_Y = 940f
-private const val STOOLS_WEEK_X = 1310f
-private const val STOOLS_WEEK_Y = 940f
 
 // Rectal bleeding X positions
 private const val RECTAL_X_LEFT = 911f       // Never, Trace

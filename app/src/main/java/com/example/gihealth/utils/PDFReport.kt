@@ -11,5 +11,11 @@ data class PDFReport(
     val todayAbdominalPain: Float?,
     val weeklyAvgAbdominalPain: Float?,
     val todayStressRating: Float?,
-    val weeklyAvgStressRating: Float?
+    val weeklyAvgStressRating: Float?,
+    val hasJointPain: Boolean,
+    val hasEyeIssues: Boolean,
+    val hasKidneyIssues: Boolean,
+    val hasSkinIssues: Boolean,
+    val hasLiverIssues: Boolean,
+    val hasRectalIssues: Boolean
 )

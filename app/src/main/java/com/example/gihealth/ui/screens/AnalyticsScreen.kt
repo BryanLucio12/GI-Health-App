@@ -157,7 +157,7 @@ fun AnalyticsScreen(
 
         item { TopSymptomsCard(topSymptoms = computeTopSymptomsWithTrend(symptoms, typeOfRange)) }
 
-        item { RecentTrendsCard() }
+        item { RecentTrendsCard(range = typeOfRange, symptoms = symptoms, entries = wellBeingEntries) }
 
         item { MoodCalendarWidget(vm = vm, onOpen = onOpenCalendar) }
 
@@ -880,12 +880,14 @@ fun WeightTrackerCard(typeOfRange: String, entries: List<WellBeingEntity>) {
 fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
     val today = LocalDate.now()
     val startOfWeek = today.with(DayOfWeek.MONDAY)
+
     val daysToShow = when (typeOfRange) {
         "This Week" -> (0..6).map { startOfWeek.plusDays(it.toLong()) }
         "Last Week" -> (0..6).map { startOfWeek.minusWeeks(1).plusDays(it.toLong()) }
         "This Month" -> (0 until today.lengthOfMonth()).map { today.withDayOfMonth(it + 1) }
         else -> emptyList()
     }
+
     val dayLabels = daysToShow.map {
         when (typeOfRange) {
             "This Month" -> it.dayOfMonth.toString()
@@ -899,20 +901,38 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             .height(300.dp)
             .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
-        val minY = 120f
-        val maxY = 200f
+        if (data.isEmpty()) return@Canvas
+
+        val actualMin = (data.values.minOrNull() ?: 120).toFloat()
+        val actualMax = (data.values.maxOrNull() ?: 200).toFloat()
+
+        val padding = 10f
+
+        val minY = (actualMin - padding).coerceAtLeast(80f)
+        val maxY = (actualMax + padding).coerceAtMost(300f)
+
         val rangeY = maxY - minY
+
         val chartWidth = size.width
         val chartHeight = size.height * 0.85f
-        val spacingX = if (daysToShow.size > 1) chartWidth / (daysToShow.size - 1) else chartWidth
+        val spacingX =
+            if (daysToShow.size > 1) chartWidth / (daysToShow.size - 1)
+            else chartWidth / 2f
 
-        // Horizontal grid
-        for (i in 0..8) {
-            val yValue = minY + i * (rangeY / 8)
+        val steps = 8
+        for (i in 0..steps) {
+            val yValue = minY + i * (rangeY / steps)
             val y = chartHeight - ((yValue - minY) / rangeY * chartHeight)
-            drawLine(Color.LightGray.copy(alpha = 0.3f), Offset(0f, y), Offset(chartWidth, y), 1f)
+
+            drawLine(
+                Color.LightGray.copy(alpha = 0.3f),
+                Offset(0f, y),
+                Offset(chartWidth, y),
+                1f
+            )
+
             drawContext.canvas.nativeCanvas.drawText(
-                "${yValue.toInt()}",
+                yValue.roundToInt().toString(),
                 -40f,
                 y + 6f,
                 android.graphics.Paint().apply {
@@ -923,21 +943,33 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             )
         }
 
-        // Vertical grid
         val verticalInterval = if (typeOfRange == "This Month") 3 else 1
         for (i in daysToShow.indices step verticalInterval) {
-            val x = i * spacingX
-            drawLine(Color.LightGray.copy(alpha = 0.25f), Offset(x, 0f), Offset(x, chartHeight), 1f)
+            val x = if (daysToShow.size > 1) i * spacingX else chartWidth / 2f
+            drawLine(
+                Color.LightGray.copy(alpha = 0.25f),
+                Offset(x, 0f),
+                Offset(x, chartHeight),
+                1f
+            )
         }
 
-        // Graph line
         val validDates = daysToShow.filter { it <= today && data.containsKey(it) }
+
         if (validDates.size > 1) {
             for (i in 1 until validDates.size) {
-                val startX = (daysToShow.indexOf(validDates[i - 1])) * spacingX
-                val startY = chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
-                val endX = (daysToShow.indexOf(validDates[i])) * spacingX
-                val endY = chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
+
+                val startIndex = daysToShow.indexOf(validDates[i - 1])
+                val endIndex = daysToShow.indexOf(validDates[i])
+
+                val startX = if (daysToShow.size > 1) startIndex * spacingX else chartWidth / 2f
+                val endX = if (daysToShow.size > 1) endIndex * spacingX else chartWidth / 2f
+
+                val startY =
+                    chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
+                val endY =
+                    chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
+
                 drawLine(
                     Color(0xFF0F9D58),
                     Offset(startX, startY),
@@ -948,15 +980,21 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             }
         }
 
-        // Dots + labels
         val labelInterval = if (typeOfRange == "This Month") 3 else 1
+
         daysToShow.forEachIndexed { i, date ->
-            val x = i * spacingX
+            val x = if (daysToShow.size > 1) i * spacingX else chartWidth / 2f
             val value = data[date]
+
             if (value != null && date <= today) {
                 val y = chartHeight - ((value - minY) / rangeY * chartHeight)
-                drawCircle(color = Color(0xFF0F9D58), radius = 7f, center = Offset(x, y))
+                drawCircle(
+                    color = Color(0xFF0F9D58),
+                    radius = 7f,
+                    center = Offset(x, y)
+                )
             }
+
             if (i % labelInterval == 0 || i == daysToShow.lastIndex) {
                 drawContext.canvas.nativeCanvas.drawText(
                     dayLabels[i],
@@ -973,8 +1011,30 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
     }
 }
 
+private data class RecentTrendsResult(
+    val bullets: List<String>,
+    val improved: Int,
+    val stable: Int,
+    val worse: Int
+)
+
 @Composable
-fun RecentTrendsCard() {
+fun RecentTrendsCard(
+    range: String,
+    symptoms: List<SymptomEntity>,
+    entries: List<WellBeingEntity>
+) {
+    // Previous range
+    val prevRange = when (range) {
+        "Today" -> "Yesterday"
+        "This Week" -> "Last Week"
+        else -> null   // no Last Month needed
+    }
+
+    val trends = remember(range, symptoms, entries) {
+        buildRecentTrends(range, prevRange, symptoms, entries)
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -984,16 +1044,158 @@ fun RecentTrendsCard() {
         Column(Modifier.padding(16.dp)) {
             Text("Recent Trends:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
-            Text("• Digestive comfort improved after reducing dairy intake.")
-            Text("• Stable weight trend across the week.")
-            Text("• Slight fluctuation observed after late-night meals.")
+
+            if (trends.bullets.isEmpty()) {
+                Text("• Not enough data to generate trends for this range.")
+            } else {
+                trends.bullets.take(3).forEach { Text("• $it") }
+            }
+
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("5 Improved", color = Color(0xFF388E3C), fontWeight = FontWeight.Bold)
-                Text(" | 2 Stable | ")
-                Text("1 Higher", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                Text("${trends.improved} Improved", color = Color(0xFF388E3C), fontWeight = FontWeight.Bold)
+                Text(" | ${trends.stable} Stable | ")
+                Text("${trends.worse} Higher", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
             }
         }
     }
 }
+
+private fun buildRecentTrends(
+    range: String,
+    prevRange: String?,
+    symptoms: List<SymptomEntity>,
+    entries: List<WellBeingEntity>
+): RecentTrendsResult {
+
+    val bullets = mutableListOf<String>()
+    var improved = 0
+    var stable = 0
+    var worse = 0
+
+    fun scoreDelta(delta: Double, betterWhenHigher: Boolean, label: String, compareLabel: String) {
+        val threshold = 0.5
+        val isImproved = if (betterWhenHigher) delta > threshold else delta < -threshold
+        val isWorse = if (betterWhenHigher) delta < -threshold else delta > threshold
+
+        when {
+            isImproved -> { improved++; bullets += "$label improved compared to $compareLabel." }
+            isWorse -> { worse++; bullets += "$label increased compared to $compareLabel." }
+            else -> { stable++; bullets += "$label stayed stable compared to $compareLabel." }
+        }
+    }
+
+    // Digestive comfort
+    val comfortNow = computeDigestiveComfortForRange(symptoms, range).values.map { it.toDouble() }.averageOrNull()
+    val comfortPrev = prevRange?.let { computeDigestiveComfortForRange(symptoms, it).values.map { v -> v.toDouble() }.averageOrNull() }
+
+    if (comfortNow != null && comfortPrev != null) {
+        scoreDelta(comfortNow - comfortPrev, betterWhenHigher = true, label = "Digestive comfort", compareLabel = prevRange)
+    } else if (comfortNow != null) {
+        bullets += "Digestive comfort average: ${comfortNow.roundToInt()}/10."
+        stable++
+    }
+
+    // Weight
+    val weightNow = averageDailyLatest(entries, range) { it.weight.toDouble() }
+    val weightPrev = prevRange?.let { averageDailyLatest(entries, it) { e -> e.weight.toDouble() } }
+
+    if (weightNow != null && weightPrev != null) {
+        val delta = weightNow - weightPrev
+        val threshold = 0.5
+        when {
+            delta > threshold -> { worse++; bullets += "Average weight increased compared to $prevRange." }
+            delta < -threshold -> { improved++; bullets += "Average weight decreased compared to $prevRange." }
+            else -> { stable++; bullets += "Weight remained stable compared to $prevRange." }
+        }
+    } else if (weightNow != null) {
+        bullets += "Average weight logged: ${weightNow.roundToInt()}."
+        stable++
+    }
+
+    // Stress
+    val stressNow = averageDailyLatest(entries, range) { it.stressRating.toDouble() }
+    val stressPrev = prevRange?.let { averageDailyLatest(entries, it) { e -> e.stressRating.toDouble() } }
+
+    if (stressNow != null && stressPrev != null) {
+        scoreDelta(stressNow - stressPrev, betterWhenHigher = false, label = "Stress level", compareLabel = prevRange)
+    } else if (stressNow != null) {
+        bullets += "Average stress rating: ${stressNow.roundToInt()}/10."
+        stable++
+    }
+
+    // Sleep
+    val sleepNow = averageDailyLatest(entries, range) { it.sleepRating.toDouble() }
+    val sleepPrev = prevRange?.let { averageDailyLatest(entries, it) { e -> e.sleepRating.toDouble() } }
+
+    if (sleepNow != null && sleepPrev != null) {
+        scoreDelta(sleepNow - sleepPrev, betterWhenHigher = true, label = "Sleep quality", compareLabel = prevRange)
+    } else if (sleepNow != null) {
+        bullets += "Average sleep rating: ${sleepNow.roundToInt()}/10."
+        stable++
+    }
+
+    // Top symptom trend
+    val top = computeTopSymptomsWithTrend(symptoms, range).firstOrNull()
+    if (top != null) {
+        val msg = when (top.trend) {
+            "↑" -> { worse++; "${top.name} severity increased in this period." }
+            "↓" -> { improved++; "${top.name} severity decreased in this period." }
+            else -> { stable++; "${top.name} severity stayed stable in this period." }
+        }
+        bullets += msg
+    }
+
+    return RecentTrendsResult(
+        bullets = bullets.distinct(),
+        improved = improved,
+        stable = stable,
+        worse = worse
+    )
+}
+
+private fun averageDailyLatest(
+    entries: List<WellBeingEntity>,
+    range: String,
+    selector: (WellBeingEntity) -> Double
+): Double? {
+    val zone = ZoneId.systemDefault()
+    val filtered = filterWellBeingForRange(entries, range, zone)
+    if (filtered.isEmpty()) return null
+
+    val latestPerDay = filtered
+        .groupBy { Instant.ofEpochMilli(it.timestamp).atZone(zone).toLocalDate() }
+        .mapValues { (_, list) -> list.maxByOrNull { it.timestamp }!! }
+
+    return latestPerDay.values.map(selector).averageOrNull()
+}
+
+private fun filterWellBeingForRange(
+    entries: List<WellBeingEntity>,
+    range: String,
+    zone: ZoneId
+): List<WellBeingEntity> {
+    val today = LocalDate.now()
+    val startOfWeek = today.with(DayOfWeek.MONDAY)
+    val lastWeekStart = startOfWeek.minusWeeks(1)
+    val lastWeekEnd = startOfWeek.minusDays(1)
+
+    fun dateOf(e: WellBeingEntity) =
+        Instant.ofEpochMilli(e.timestamp).atZone(zone).toLocalDate()
+
+    return entries.filter {
+        val d = dateOf(it)
+        when (range) {
+            "Today" -> d == today
+            "Yesterday" -> d == today.minusDays(1)
+            "This Week" -> d in startOfWeek..today
+            "Last Week" -> d in lastWeekStart..lastWeekEnd
+            "This Month" -> d.month == today.month && d.year == today.year
+            else -> false
+        }
+    }
+}
+
+private fun Collection<Double>.averageOrNull(): Double? = if (isEmpty()) null else average()
+
 
