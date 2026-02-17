@@ -39,6 +39,8 @@ fun SelectSymptomsScreen(
         "Heartburn/reflux",
         "Difficulty swallowing",
         "Nausea",
+        "Right upper abdominal pain",
+        "Kidney pain",
         "Vomiting",
         "Black tarry stools",
         "Dark urine",
