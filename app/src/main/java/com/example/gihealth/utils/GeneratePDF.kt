@@ -382,6 +382,18 @@ fun generatePdfReport(
          else
              null
 
+     answers.generalWellBeing?.let { value ->
+         ALLIANCE_GENERAL_WELL_BEING_POSITIONS[value]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+     answers.rectalBleedingToday?.let { value ->
+         ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS[value]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+
 // Abdominal pain
      val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
 
@@ -457,7 +469,7 @@ fun generatePdfReport(
     val page4 = pdf.startPage(page4Info)
     val canvas4 = page4.canvas
 
-    // center samller bitmap of page 4 inside full size pdf page of 1 and 2
+    // center smaller bitmap of page 4 inside full size PDF page of 1 and 2
 
     val offsetX4 = (referencePageWidth - page4Bitmap.width*scaleFactor) / 2f
     val offsetY4 = (referencePageHeight - page4Bitmap.height*scaleFactor) / 2f
@@ -842,3 +854,27 @@ private fun hasRecentSymptom(
         it.timestamp >= oneMonthAgo && it.name in names
     }
 }
+
+private val ALLIANCE_GENERAL_WELL_BEING_POSITIONS = mapOf(
+    0 to Pair(267f, 390f),
+    1 to Pair(267f, 435f),
+    2 to Pair(267f, 480f),
+    3 to Pair(267f, 522f),
+    4 to Pair(267f, 567f)
+)
+
+
+private val ALLIANCE_GENERAL_WELL_BEING_WEEKLY_POSITIONS = mapOf(
+    0 to Pair(1005f, 390f),
+    1 to Pair(1005f, 435f),
+    2 to Pair(1005f, 480f),
+    3 to Pair(1005f, 522f),
+    4 to Pair(1005f, 567f)
+)
+
+private val ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS = mapOf(
+    0 to Pair(267f, 1035f),
+    1 to Pair(267f, 1080f),
+    2 to Pair(267f, 1125f),
+    3 to Pair(267f, 1170f)
+)

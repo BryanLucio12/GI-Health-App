@@ -35,4 +35,9 @@ data class PdfQuestionnaireAnswers(
 
     // USER Question 5
     val question10a: String?,
+
+    val generalWellBeing: Int?,
+
+    val rectalBleedingToday: Int?
+
 )

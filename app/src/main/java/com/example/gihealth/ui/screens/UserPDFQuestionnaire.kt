@@ -64,7 +64,13 @@ fun UserPDFQuestionnaire(
                 question9b = null,
                 question9c = null,
 
-                question10a = null
+                question10a = null,
+
+                generalWellBeing = null,
+
+
+
+                rectalBleedingToday = null
             )
         )
     }
@@ -294,6 +300,71 @@ fun UserPDFQuestionnaire(
             ),
             maxLines = 6
         )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "Question 6 – General Well-Being",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Text(
+            text = "What describes your general well-being today?",
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                "Very well" to 0,
+                "Slightly below par" to 1,
+                "Poor" to 2,
+                "Very poor" to 3,
+                "Terrible" to 4
+            ).forEach { (label, value) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = answers.generalWellBeing == value,
+                        onClick = { answers = answers.copy(generalWellBeing = value) },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = Color(0xFF0F9D58)
+                        )
+                    )
+                    Text(label)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+
+        Text(
+            text = "Question 7 - Rectal Bleeding – Today",
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                "None" to 0,
+                "Visible with stool, less than half the time" to 1,
+                "Visible with stool, more than half the time" to 2,
+                "Passing blood alone" to 3
+            ).forEach { (label, value) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = answers.rectalBleedingToday == value,
+                        onClick = { answers = answers.copy(rectalBleedingToday = value) },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = Color(0xFF0F9D58)
+                        )
+                    )
+                    Text(label)
+                }
+            }
+        }
 
         val symptomViewModel: SymptomViewModel = viewModel() // gets the ViewModel
         val symptomsList by symptomViewModel.symptoms.collectAsState()
