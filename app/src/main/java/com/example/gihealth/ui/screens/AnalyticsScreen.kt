@@ -880,12 +880,14 @@ fun WeightTrackerCard(typeOfRange: String, entries: List<WellBeingEntity>) {
 fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
     val today = LocalDate.now()
     val startOfWeek = today.with(DayOfWeek.MONDAY)
+
     val daysToShow = when (typeOfRange) {
         "This Week" -> (0..6).map { startOfWeek.plusDays(it.toLong()) }
         "Last Week" -> (0..6).map { startOfWeek.minusWeeks(1).plusDays(it.toLong()) }
         "This Month" -> (0 until today.lengthOfMonth()).map { today.withDayOfMonth(it + 1) }
         else -> emptyList()
     }
+
     val dayLabels = daysToShow.map {
         when (typeOfRange) {
             "This Month" -> it.dayOfMonth.toString()
@@ -899,20 +901,38 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             .height(300.dp)
             .padding(horizontal = 24.dp, vertical = 8.dp)
     ) {
-        val minY = 120f
-        val maxY = 200f
+        if (data.isEmpty()) return@Canvas
+
+        val actualMin = (data.values.minOrNull() ?: 120).toFloat()
+        val actualMax = (data.values.maxOrNull() ?: 200).toFloat()
+
+        val padding = 10f
+
+        val minY = (actualMin - padding).coerceAtLeast(80f)
+        val maxY = (actualMax + padding).coerceAtMost(300f)
+
         val rangeY = maxY - minY
+
         val chartWidth = size.width
         val chartHeight = size.height * 0.85f
-        val spacingX = if (daysToShow.size > 1) chartWidth / (daysToShow.size - 1) else chartWidth
+        val spacingX =
+            if (daysToShow.size > 1) chartWidth / (daysToShow.size - 1)
+            else chartWidth / 2f
 
-        // Horizontal grid
-        for (i in 0..8) {
-            val yValue = minY + i * (rangeY / 8)
+        val steps = 8
+        for (i in 0..steps) {
+            val yValue = minY + i * (rangeY / steps)
             val y = chartHeight - ((yValue - minY) / rangeY * chartHeight)
-            drawLine(Color.LightGray.copy(alpha = 0.3f), Offset(0f, y), Offset(chartWidth, y), 1f)
+
+            drawLine(
+                Color.LightGray.copy(alpha = 0.3f),
+                Offset(0f, y),
+                Offset(chartWidth, y),
+                1f
+            )
+
             drawContext.canvas.nativeCanvas.drawText(
-                "${yValue.toInt()}",
+                yValue.roundToInt().toString(),
                 -40f,
                 y + 6f,
                 android.graphics.Paint().apply {
@@ -923,21 +943,33 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             )
         }
 
-        // Vertical grid
         val verticalInterval = if (typeOfRange == "This Month") 3 else 1
         for (i in daysToShow.indices step verticalInterval) {
-            val x = i * spacingX
-            drawLine(Color.LightGray.copy(alpha = 0.25f), Offset(x, 0f), Offset(x, chartHeight), 1f)
+            val x = if (daysToShow.size > 1) i * spacingX else chartWidth / 2f
+            drawLine(
+                Color.LightGray.copy(alpha = 0.25f),
+                Offset(x, 0f),
+                Offset(x, chartHeight),
+                1f
+            )
         }
 
-        // Graph line
         val validDates = daysToShow.filter { it <= today && data.containsKey(it) }
+
         if (validDates.size > 1) {
             for (i in 1 until validDates.size) {
-                val startX = (daysToShow.indexOf(validDates[i - 1])) * spacingX
-                val startY = chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
-                val endX = (daysToShow.indexOf(validDates[i])) * spacingX
-                val endY = chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
+
+                val startIndex = daysToShow.indexOf(validDates[i - 1])
+                val endIndex = daysToShow.indexOf(validDates[i])
+
+                val startX = if (daysToShow.size > 1) startIndex * spacingX else chartWidth / 2f
+                val endX = if (daysToShow.size > 1) endIndex * spacingX else chartWidth / 2f
+
+                val startY =
+                    chartHeight - ((data[validDates[i - 1]]!! - minY) / rangeY * chartHeight)
+                val endY =
+                    chartHeight - ((data[validDates[i]]!! - minY) / rangeY * chartHeight)
+
                 drawLine(
                     Color(0xFF0F9D58),
                     Offset(startX, startY),
@@ -948,15 +980,21 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
             }
         }
 
-        // Dots + labels
         val labelInterval = if (typeOfRange == "This Month") 3 else 1
+
         daysToShow.forEachIndexed { i, date ->
-            val x = i * spacingX
+            val x = if (daysToShow.size > 1) i * spacingX else chartWidth / 2f
             val value = data[date]
+
             if (value != null && date <= today) {
                 val y = chartHeight - ((value - minY) / rangeY * chartHeight)
-                drawCircle(color = Color(0xFF0F9D58), radius = 7f, center = Offset(x, y))
+                drawCircle(
+                    color = Color(0xFF0F9D58),
+                    radius = 7f,
+                    center = Offset(x, y)
+                )
             }
+
             if (i % labelInterval == 0 || i == daysToShow.lastIndex) {
                 drawContext.canvas.nativeCanvas.drawText(
                     dayLabels[i],
