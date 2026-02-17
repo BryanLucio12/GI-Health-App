@@ -45,6 +45,9 @@ fun LogWeightScreen(navController: NavController) {
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
 
+    var looseStoolsText by remember { mutableStateOf("") }
+    var looseStoolsError by remember { mutableStateOf<String?>(null) }
+
 
     Scaffold(
         topBar = {
@@ -166,6 +169,38 @@ fun LogWeightScreen(navController: NavController) {
                 }
             }
 
+            // Stool Counter
+            item {
+                Text("How many stools were soft, loose, or liquid?", fontWeight = FontWeight.Bold)
+
+                OutlinedTextField(
+                    value = looseStoolsText,
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() }) {
+                            looseStoolsText = newValue
+                            val numeric = newValue.toIntOrNull()
+
+                            looseStoolsError = when {
+                                newValue.isEmpty() -> null // allow blank => treated as 0
+                                numeric == null -> "Invalid number"
+                                numeric !in 0..50 -> "Must be between 0 and 50"
+                                else -> null
+                            }
+                        }
+                    },
+                    isError = looseStoolsError != null,
+                    label = { Text("Soft/loose/liquid stools") },
+                    placeholder = { Text("0 - 50") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                looseStoolsError?.let {
+                    Text(it, color = Color.Red, fontSize = 13.sp)
+                }
+            }
+
+
             // sleep tracker
             item {
                 WellbeingSliderCard(
@@ -180,7 +215,7 @@ fun LogWeightScreen(navController: NavController) {
             // stress tracker
             item {
                 WellbeingSliderCard(
-                    title = "Stress level",
+                    title = "General Well Being",
                     value = stressRating,
                     note = stressNote,
                     onValueChange = { stressRating = it },
@@ -192,11 +227,14 @@ fun LogWeightScreen(navController: NavController) {
             item {
                 Button(
                     onClick = {
-                        if (weightError == null && weightText.isNotEmpty()) {
+                        if (weightError == null && looseStoolsError == null && weightText.isNotEmpty()) {
                             val formattedDate = selectedDate.format(dateFormatter)
 
                             val zone = java.time.ZoneId.systemDefault()
                             val nowTime = java.time.LocalTime.now()
+
+                            val looseStoolsCount = looseStoolsText.toIntOrNull() ?: 0
+
 
                             val entry = WellBeingEntity(
                                 timestamp = selectedDate
@@ -210,7 +248,8 @@ fun LogWeightScreen(navController: NavController) {
                                 sleepNote = sleepNote,
                                 stressRating = stressRating.toInt(),
                                 stressNote = stressNote,
-                                date = formattedDate
+                                date = formattedDate,
+                                looseStoolsCount = looseStoolsCount
                             )
 
                             viewModel.insertEntry(entry)
@@ -219,7 +258,7 @@ fun LogWeightScreen(navController: NavController) {
                     }
 
                     ,
-                    enabled = weightError == null && weightText.isNotEmpty(),
+                    enabled = weightError == null && looseStoolsError == null && weightText.isNotEmpty(),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
