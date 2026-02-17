@@ -10,6 +10,8 @@ const val FLARE_SEVERITY_THRESHOLD = 3
 class ReportBuilder {
 
     fun build(symptoms: List<SymptomEntity>, wellBeing: List<WellBeingEntity>, userInfo: UserInfoEntity?): PDFReport {
+        val now = System.currentTimeMillis()
+        val thirtyDaysAgo = now - 30L * 24 * 60 * 60 * 1000
 
         // question 1
         val bowelRows = symptoms.filter {
@@ -66,6 +68,34 @@ class ReportBuilder {
         val weightChange: Int?
         val weightDelta: Int?
 
+        fun hasRecent(names: Set<String>): Boolean {
+            return symptoms.any {
+                it.timestamp >= thirtyDaysAgo && it.name in names
+            }
+        }
+
+        val hasJointPain = hasRecent(setOf("Joint pain"))
+
+        val hasEyeIssues = hasRecent(
+            setOf("Eye irritation", "Eye pain", "Eye Redness", "Double vision")
+        )
+
+        val hasKidneyIssues = hasRecent(
+            setOf("Blood in urine", "Dark urine", "Kidney pain")
+        )
+
+        val hasSkinIssues = hasRecent(
+            setOf("Rashes", "Itching")
+        )
+
+        val hasLiverIssues = hasRecent(
+            setOf("Jaundice", "Right upper abdominal pain")
+        )
+
+        val hasRectalIssues = hasRecent(
+            setOf("Anorectal pain/itching", "Blood in stool")
+        )
+
         if (initialWeight != null && latestWeight != null) {
             weightChange = when {
                 latestWeight > initialWeight -> 0   // Increased
@@ -102,7 +132,14 @@ class ReportBuilder {
             todayAbdominalPain = todayAbdominalPain,
             weeklyAvgAbdominalPain = weeklyAvgAbdominalPain,
             todayStressRating = todayStressRating,
-            weeklyAvgStressRating = weeklyAvgStressRating
+            weeklyAvgStressRating = weeklyAvgStressRating,
+            hasJointPain = hasJointPain,
+            hasEyeIssues = hasEyeIssues,
+            hasKidneyIssues = hasKidneyIssues,
+            hasSkinIssues = hasSkinIssues,
+            hasLiverIssues = hasLiverIssues,
+            hasRectalIssues = hasRectalIssues
+
         )
     }
 

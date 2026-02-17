@@ -240,30 +240,32 @@ fun generatePdfReport(
         }
 
 
-    if (hasRecentSymptom(symptoms, setOf("Joint pain"))) {
-        canvas1.drawText("✔", COMPLICATION_COL1_X, JOINT_PAIN_Y, paint)
-    }
 
-    if (hasRecentSymptom(symptoms, setOf("Rashes", "Itching"))) {
-        canvas1.drawText("✔", COMPLICATION_COL1_X, SKIN_ISSUES_Y, paint)
-    }
+     if (report.hasJointPain) {
+         canvas2.drawText("✔", COMPLICATION_COL1_X, 2290f, paint)
+     }
 
-    if (hasRecentSymptom(symptoms, setOf("Eye pain", "Eye irritation", "Eye Redness"))) {
-        canvas1.drawText("✔", COMPLICATION_COL2_X, EYE_ISSUES_Y, paint)
-    }
+     if (report.hasSkinIssues) {
+         canvas2.drawText("✔", COMPLICATION_COL1_X, 2350f, paint)
+     }
 
-    if (hasRecentSymptom(symptoms, setOf("Jaundice"))) {
-        canvas1.drawText("✔", COMPLICATION_COL2_X, LIVER_ISSUES_Y, paint)
-    }
+     if (report.hasEyeIssues) {
+         canvas2.drawText("✔", COMPLICATION_COL2_X, 2290f, paint)
+     }
+
+     if (report.hasLiverIssues) {
+         canvas2.drawText("✔", COMPLICATION_COL2_X, 2350f, paint)
+     }
+
+     if (report.hasKidneyIssues) {
+         canvas2.drawText("✔", COMPLICATION_COL3_X, 2290f, paint)
+     }
+
+     if (report.hasRectalIssues) {
+         canvas2.drawText("✔", COMPLICATION_COL3_X, 2350f, paint)
+     }
 
 
-    if (hasRecentSymptom(symptoms, setOf("Blood in urine", "Dark urine"))) {
-        canvas1.drawText("✔", COMPLICATION_COL3_X, KIDNEY_ISSUES_Y, paint)
-    }
-
-    if (hasRecentSymptom(symptoms, setOf("Anorectal pain/itching", "Blood in stool"))) {
-        canvas1.drawText("✔", COMPLICATION_COL3_X, RECTAL_ISSUES_Y, paint)
-    }
 
     answers.question9a?.let { value ->
         val checkboxY = when (value) {
@@ -837,12 +839,6 @@ private const val COMPLICATION_COL1_X = 932f
 private const val COMPLICATION_COL2_X = 1256f
 private const val COMPLICATION_COL3_X = 1632f
 
-private const val JOINT_PAIN_Y = 3400f
-private const val SKIN_ISSUES_Y = 3465f
-private const val EYE_ISSUES_Y = 3400f
-private const val LIVER_ISSUES_Y = 3465f
-private const val KIDNEY_ISSUES_Y = 3400f
-private const val RECTAL_ISSUES_Y = 3465f
 
 
 private fun hasRecentSymptom(
@@ -864,13 +860,6 @@ private val ALLIANCE_GENERAL_WELL_BEING_POSITIONS = mapOf(
 )
 
 
-private val ALLIANCE_GENERAL_WELL_BEING_WEEKLY_POSITIONS = mapOf(
-    0 to Pair(1005f, 390f),
-    1 to Pair(1005f, 435f),
-    2 to Pair(1005f, 480f),
-    3 to Pair(1005f, 522f),
-    4 to Pair(1005f, 567f)
-)
 
 private val ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS = mapOf(
     0 to Pair(267f, 1035f),
@@ -878,3 +867,4 @@ private val ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS = mapOf(
     2 to Pair(267f, 1125f),
     3 to Pair(267f, 1170f)
 )
+
