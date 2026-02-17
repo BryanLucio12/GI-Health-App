@@ -219,15 +219,6 @@ fun UserSetupScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Error message
-            if (errorMessage.isNotEmpty()) {
-                Text(
-                    text = errorMessage,
-                    color = Color.Red,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
 
             // Continue button
             Button(
