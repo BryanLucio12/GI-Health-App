@@ -2,6 +2,7 @@ package com.example.gihealth.ui.onboarding
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import com.example.gihealth.data.WellBeingViewModel
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +29,19 @@ fun ProfileScreen(navController: NavController) {
             context.applicationContext as Application
         )
     )
+
+    val wellBeingViewModel: WellBeingViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
+
+    val wellBeingEntries by wellBeingViewModel.entries.observeAsState(emptyList())
+
+    val latestWeight = wellBeingEntries
+        .maxByOrNull { it.timestamp }
+        ?.weight
+
 
     // User Data
     val userInfo by userInfoViewModel.userInfo.observeAsState()
@@ -76,7 +90,12 @@ fun ProfileScreen(navController: NavController) {
         if (!isEditing) {
             ProfileField(label = "Name", value = userInfo?.name ?: "")
             ProfileField(label = "Age", value = userInfo?.age?.toString() ?: "")
-            ProfileField(label = "Weight", value = userInfo?.weight?.toString() ?: "")
+            ProfileField(
+                label = "Weight",
+                value = latestWeight?.let { "${it.toInt()} lbs" }
+                    ?: userInfo?.weight?.toString()
+                    ?: "—"
+            )
             ProfileField(label = "Gender", value = userInfo?.gender ?: "")
             ProfileField(label = "Blood Type", value = userInfo?.bloodType ?: "")
             ProfileField(label = "Conditions", value = userInfo?.disease ?: "")
