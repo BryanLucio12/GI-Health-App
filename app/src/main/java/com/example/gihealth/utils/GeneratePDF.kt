@@ -23,7 +23,7 @@ fun generatePdfReport(
     context: Context,
     symptoms: List<SymptomEntity>,
     answers: PdfQuestionnaireAnswers,
-    userInfo: UserInfoEntity? = null,
+    userInfo: UserInfoEntity?,
     symptomsList: List<SymptomEntity>,
     wellBeingList: List<WellBeingEntity>,
 )
@@ -48,8 +48,6 @@ fun generatePdfReport(
         isAntiAlias = true
         color = android.graphics.Color.BLACK
     }
-
-    val tempDob = "08/11/2026"
 
 
     // make page 1 of questionnaire
@@ -320,7 +318,7 @@ fun generatePdfReport(
 
 
 
-    // page 3 (page 1 of GI Alliance form)
+    // PAGE 3 (page 1 of GI Alliance form)
     val page3Bitmap = BitmapFactory.decodeStream(
         context.assets.open("alliance_page_1.png")
     )
@@ -350,80 +348,78 @@ fun generatePdfReport(
         canvas3.drawText(name, ALLIANCE_NAME_X, ALLIANCE_NAME_Y, headerPaint)
     }
 
-    canvas3.drawText(
-        tempDob,
-        ALLIANCE_DOB_X,
-        ALLIANCE_DOB_Y,
-        headerPaint
-    )
+     val dobText = userInfo?.dob?.trim().orEmpty()
+
+     if (dobText.isNotBlank()) {
+         canvas3.drawText(
+             dobText,
+             ALLIANCE_DOB_X,
+             ALLIANCE_DOB_Y,
+             headerPaint
+         )
+     }
 
      val zone = java.time.ZoneId.systemDefault()
      val today = java.time.LocalDate.now()
      val startDay = today.minusDays(6)
 
-// Stress
+
+// WELLBEING
      val last7WellBeing = wellBeingList.filter { entry ->
-         val d = java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
+         val d = java.time.Instant.ofEpochMilli(entry.timestamp)
+             .atZone(zone)
+             .toLocalDate()
          d in startDay..today
      }
 
-     val latestStressPerDay: Map<java.time.LocalDate, WellBeingEntity> =
+     val latestWellBeingPerDay: Map<java.time.LocalDate, WellBeingEntity> =
          last7WellBeing
              .groupBy { entry ->
-                 java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
+                 java.time.Instant.ofEpochMilli(entry.timestamp)
+                     .atZone(zone)
+                     .toLocalDate()
              }
              .mapValues { (_, list) -> list.maxByOrNull { it.timestamp }!! }
 
-     val todayStressRatingLocal: Int? = latestStressPerDay[today]?.stressRating
+
+// LOOSE STOOLS
+     val todayLooseStools =
+         latestWellBeingPerDay[today]?.looseStoolsCount ?: 0
+
+     val pastWeekLooseStools =
+         (0..6).sumOf { i ->
+             val day = startDay.plusDays(i.toLong())
+             latestWellBeingPerDay[day]?.looseStoolsCount ?: 0
+         }
+
+     val stoolTextPaint = Paint(paint).apply { textSize = 36f }
+
+     canvas3.drawText(
+         todayLooseStools.toString(),
+         STOOLS_TODAY_X,
+         STOOLS_TODAY_Y,
+         stoolTextPaint
+     )
+
+     canvas3.drawText(
+         pastWeekLooseStools.toString(),
+         STOOLS_WEEK_X,
+         STOOLS_WEEK_Y,
+         stoolTextPaint
+     )
+
+
+// STRESS
+     val todayStressRatingLocal: Int? =
+         latestWellBeingPerDay[today]?.stressRating
 
      val weeklyAvgStressRatingLocal: Double? =
-         if (latestStressPerDay.isNotEmpty())
-             latestStressPerDay.values.map { it.stressRating }.average()
-         else
-             null
+         if (latestWellBeingPerDay.isNotEmpty())
+             latestWellBeingPerDay.values
+                 .map { it.stressRating }
+                 .average()
+         else null
 
-     //COMMENTED OUT UNTIL FIXED MERGE
-
-  //   answers.generalWellBeing?.let { value ->
-   //      ALLIANCE_GENERAL_WELL_BEING_POSITIONS[value]?.let { (x, y) ->
-    //         canvas3.drawText("✔", x, y, paint)
-   //      }
-   //  }
-   //  answers.rectalBleedingToday?.let { value ->
-   //      ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS[value]?.let { (x, y) ->
-  //           canvas3.drawText("✔", x, y, paint)
- //        }
- //    }
-
-
-// Abdominal pain
-     val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
-
-// today pain
-     val startOfTodayMillis = today.atStartOfDay(zone).toInstant().toEpochMilli()
-     val todayAbdominalPainLocal: Int =
-         abdominalPainLogs
-             .filter { it.timestamp >= startOfTodayMillis }
-             .maxByOrNull { it.timestamp }
-             ?.severity
-             ?: 0
-
-// weekly pain
-     val dailyPainValues = (0..6).map { offset ->
-         val date = today.minusDays(offset.toLong())
-         val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
-         val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-
-         abdominalPainLogs
-             .filter { it.timestamp in dayStart until dayEnd }
-             .maxByOrNull { it.timestamp }
-             ?.severity
-             ?: 0
-     }
-     val weeklyAvgAbdominalPainLocal: Double = dailyPainValues.average()
-
-
-     // Stress rating
      todayStressRatingLocal?.let { stress ->
          val option = q1AllianceToday(stress)
          ALLIANCE_TODAY_POSITIONS[option]?.let { (x, y) ->
@@ -438,7 +434,52 @@ fun generatePdfReport(
          }
      }
 
-     // Abdominal Pain
+
+
+// RECTAL BLEEDING
+     answers.rectalBleedingToday?.let { value ->
+         ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS[value]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+     //COMMENTED OUT UNTIL FIXED MERGE
+     //   answers.generalWellBeing?.let { value ->
+     //      ALLIANCE_GENERAL_WELL_BEING_POSITIONS[value]?.let { (x, y) ->
+     //         canvas3.drawText("✔", x, y, paint)
+     //      }
+     //  }
+
+
+// ABDOMINAL PAIN (from symptoms)
+     val abdominalPainLogs =
+         symptomsList.filter { it.name == "Abdominal pain" }
+
+// Today
+     val startOfTodayMillis =
+         today.atStartOfDay(zone).toInstant().toEpochMilli()
+
+     val todayAbdominalPainLocal: Int =
+         abdominalPainLogs
+             .filter { it.timestamp >= startOfTodayMillis }
+             .maxByOrNull { it.timestamp }
+             ?.severity
+             ?: 0
+
+// Weekly average
+     val dailyPainValues = (0..6).map { offset ->
+         val date = today.minusDays(offset.toLong())
+         val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+         val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+
+         abdominalPainLogs
+             .filter { it.timestamp in dayStart until dayEnd }
+             .maxByOrNull { it.timestamp }
+             ?.severity
+             ?: 0
+     }
+
+     val weeklyAvgAbdominalPainLocal = dailyPainValues.average()
+
      run {
          val label = allianceAbdominalPainToday(todayAbdominalPainLocal)
          ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
@@ -452,6 +493,84 @@ fun generatePdfReport(
              canvas3.drawText("✔", x, y, paint)
          }
      }
+
+     val complicationNames = listOf(
+         "Joint Pain",
+         "Eye Pain",
+         "Red Nodules on Legs",
+         "Mouth Sores",
+         "Skin Ulcers",
+         "Anal Fissure",
+         "New Fistula",
+         "Abscess"
+     )
+
+     val hasAnyComplication = complicationNames.any { name ->
+         hasRecentComplication(symptomsList, name)
+     }
+
+     if (!hasAnyComplication) {
+         // Check "None"
+         ALLIANCE_COMPLICATION_POSITIONS["None"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     } else {
+         // Check the ones that exist
+         complicationNames.forEach { name ->
+             if (hasRecentComplication(symptomsList, name)) {
+                 ALLIANCE_COMPLICATION_POSITIONS[name]?.let { (x, y) ->
+                     canvas3.drawText("✔", x, y, paint)
+                 }
+             }
+         }
+     }
+
+     // Hepatitis Screening
+     answers.hxHepB?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["hx_hep_b"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     answers.hepBVaccinated?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["hep_b_vax"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     answers.hepBPositiveTest?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["hep_b_positive"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     answers.illicitDrugUse?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["illicit_drugs"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     fun drawTB(key: String, checked: Int?) {
+         if (checked == 1) {
+             ALLIANCE_TB_POSITIONS[key]?.let { (x, y) ->
+                 canvas3.drawText("✔", x, y, paint)
+             }
+         }
+     }
+
+     drawTB("positiveTbTest", answers.positiveTbTest)
+     drawTB("hxTbDisease", answers.hxTbDisease)
+     drawTB("treatedActiveOrLatentTb", answers.treatedActiveOrLatentTb)
+     drawTB("traveledOutsideRecently", answers.traveledOutsideRecently)
+     drawTB("liveVaccinationsRecently", answers.liveVaccinationsRecently)
+     drawTB("healthcareHighRiskWorker", answers.healthcareHighRiskWorker)
+
+     answers.rectalBleedingWeek?.let { value ->
+         ALLIANCE_RECTAL_BLEEDING_WEEK_POSITIONS[value]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
 
      canvas3.restore()
     pdf.finishPage(page3)
@@ -586,16 +705,17 @@ private val challengeFrequencyX = mapOf(
 )
 
 
-private fun q1AllianceToday(stressRating: Int): String {
-    val s = stressRating.coerceIn(1, 10)
+private fun q1AllianceToday(generalWellBeing: Int): String {
+    val s = generalWellBeing.coerceIn(1, 10)
     return when (s) {
-        1, 2 -> "very well"
-        3, 4 -> "slightly below par"
+        1, 2 -> "terrible"
+        3, 4 -> "very poor"
         5, 6 -> "poor"
-        7, 8 -> "very poor"
-        else -> "terrible" // 9-10
+        7, 8 -> "slightly below par"
+        else -> "very well" // 9-10
     }
 }
+
 
 private val ALLIANCE_TODAY_POSITIONS = mapOf(
     "very well" to Pair(267f, 390f),
@@ -629,11 +749,11 @@ private val ALLIANCE_AB_PAIN_WEEKLY_POSITIONS = mapOf(
 private fun q1AllianceWeekly(avg: Double): String {
     val a = avg.coerceIn(1.0, 10.0)
     return when {
-        a < 2.5 -> "very well"
-        a < 4.5 -> "slightly below par"
+        a < 2.5 -> "terrible"
+        a < 4.5 -> "very poor"
         a < 6.5 -> "poor"
-        a < 8.5 -> "very poor"
-        else -> "terrible"
+        a < 8.5 -> "slightly below par"
+        else -> "very well"
     }
 }
 
@@ -771,6 +891,13 @@ private const val ALLIANCE_NAME_Y = 290f
 private const val ALLIANCE_DOB_X = 1200f
 private const val ALLIANCE_DOB_Y = 290f
 
+private const val STOOLS_TODAY_X = 600f
+
+private const val STOOLS_TODAY_Y = 938f
+
+private const val STOOLS_WEEK_X = 1360f
+
+private const val STOOLS_WEEK_Y = 938f
 
 // Rectal bleeding X positions
 private const val RECTAL_X_LEFT = 911f       // Never, Trace
@@ -854,3 +981,58 @@ private fun hasRecentSymptom(
         it.timestamp >= oneMonthAgo && it.name in names
     }
 }
+
+private val ALLIANCE_COMPLICATION_POSITIONS = mapOf(
+    "None" to Pair(267f, 1280f),
+    "Joint Pain" to Pair(267f, 1324f),
+    "Eye Pain" to Pair(267f, 1368f),
+    "Red Nodules on Legs" to Pair(267f, 1412f),
+    "Mouth Sores" to Pair(267f, 1456f),
+    "Skin Ulcers" to Pair(267f, 1500f),
+    "Anal Fissure" to Pair(267f, 1544f),
+    "New Fistula" to Pair(267f, 1588f),
+    "Abscess" to Pair(267f, 1632f)
+)
+
+private val ALLIANCE_HEP_SCREENING_POSITIONS = mapOf(
+    "hx_hep_b" to Pair(267f, 1742f),
+    "hep_b_vax" to Pair(267f, 1786f),
+    "hep_b_positive" to Pair(267f, 1830f),
+    "illicit_drugs" to Pair(267f, 1874f)
+)
+
+private val ALLIANCE_TB_POSITIONS = mapOf(
+    "positiveTbTest" to Pair(954f, 1280f),
+    "hxTbDisease" to Pair(954f, 1324f),
+    "treatedActiveOrLatentTb" to Pair(954f, 1368f),
+    "traveledOutsideRecently" to Pair(954f, 1412f),
+    "liveVaccinationsRecently" to Pair(954f, 1491f),
+    "healthcareHighRiskWorker" to Pair(954f, 1535f)
+)
+
+private val ALLIANCE_RECTAL_BLEEDING_WEEK_POSITIONS = mapOf(
+    0 to Pair(954f, 1035f),
+    1 to Pair(954f, 1080f),
+    2 to Pair(954f, 1125f),
+    3 to Pair(954f, 1170f)
+)
+
+
+private fun hasRecentComplication(
+    symptoms: List<SymptomEntity>,
+    name: String,
+    days: Long = 30L
+): Boolean {
+    val cutoff = System.currentTimeMillis() - days * 24 * 60 * 60 * 1000
+    val target = name.trim().lowercase()
+    return symptoms.any {
+        it.timestamp >= cutoff && it.name.trim().lowercase() == target
+    }
+}
+
+private val ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS = mapOf(
+    0 to Pair(267f, 1035f),
+    1 to Pair(267f, 1080f),
+    2 to Pair(267f, 1125f),
+    3 to Pair(267f, 1170f)
+)

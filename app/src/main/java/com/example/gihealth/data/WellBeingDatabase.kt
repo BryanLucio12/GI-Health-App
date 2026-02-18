@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [WellBeingEntity::class], version = 3)
+@Database(entities = [WellBeingEntity::class], version = 4)
 abstract class WellBeingDatabase : RoomDatabase() {
     abstract fun wellBeingDao(): WellBeingDao
     companion object {

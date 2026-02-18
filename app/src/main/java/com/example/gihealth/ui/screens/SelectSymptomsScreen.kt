@@ -80,7 +80,12 @@ fun SelectSymptomsScreen(
         "Sleep apnea",
         "Wheezing",
         "Shortness of breath",
-        "Allergies"
+        "Red nodules on legs",
+        "Skin ulcers",
+        "Anal fissure",
+        "New fistula",
+        "Abscess"
+
     )
 
 
