@@ -1,8 +1,10 @@
 package com.example.gihealth.ui.onboarding
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
@@ -15,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,7 +89,6 @@ fun UserSetupScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // WEIGHT
             OutlinedTextField(
                 value = weight,
                 onValueChange = { input ->
@@ -98,31 +100,56 @@ fun UserSetupScreen(
                 isError = showErrors && !isWeightValid,
                 modifier = Modifier.fillMaxWidth()
             )
+
             if (showErrors && !isWeightValid) {
                 Text("Weight is required", color = Color.Red)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // DOB FIELD
+            Text(
+                text = "Date of Birth *",
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            val borderColor = when {
+                showErrors && !isDobValid -> Color.Red
+                else -> Color.DarkGray
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(56.dp)
+                    .border(
+                        width = 1.dp,
+                        color = borderColor,
+                        shape = MaterialTheme.shapes.small
+                    )
                     .clickable { showDobDialog = true }
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                OutlinedTextField(
-                    value = dob,
-                    onValueChange = {},
-                    readOnly = true,
-                    enabled = false,   // important
-                    label = { Text("Date of Birth *") },
-                    isError = showErrors && !isDobValid,
-                    modifier = Modifier.fillMaxWidth()
+                Text(
+                    text = dob.ifBlank { "MM/DD/YYYY" },
+                    color = if (dob.isBlank())
+                        Color.Black  // proper placeholder grey
+                    else
+                        Color.Black,
+                    fontSize = 16.sp
                 )
             }
 
             if (showErrors && !isDobValid) {
-                Text("Date of birth is required", color = Color.Red)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Date of birth is required",
+                    color = Color.Red,
+                    fontSize = 13.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
