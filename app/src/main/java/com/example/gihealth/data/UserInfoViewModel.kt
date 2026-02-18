@@ -20,6 +20,9 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
     private val _userInfo = MutableLiveData<UserInfoEntity?>()
     val userInfo: LiveData<UserInfoEntity?> = _userInfo
 
+    private val _isLoading = MutableLiveData(true)
+    val isLoading: LiveData<Boolean> = _isLoading
+
 
     init {
         loadUserInfo()
@@ -31,6 +34,7 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             val info = userInfoDao.getUserInfo()
             _userInfo.postValue(info)
+            _isLoading.postValue(false)
         }
     }
 
@@ -62,6 +66,8 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
             )
             userInfoDao.insert(updatedInfo)
             _userInfo.postValue(updatedInfo)
+            _isLoading.postValue(false)
+
         }
     }
 
@@ -84,6 +90,8 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
                 )
             userInfoDao.insert(updatedInfo)
             _userInfo.postValue(updatedInfo)
+            _isLoading.postValue(false)
+
         }
     }
 
