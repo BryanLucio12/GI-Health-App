@@ -1,8 +1,13 @@
 package com.example.gihealth.ui.onboarding
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import com.example.gihealth.data.WellBeingViewModel
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +22,8 @@ import androidx.lifecycle.ViewModelProvider
 import android.app.Application
 import androidx.compose.runtime.livedata.observeAsState
 import com.example.gihealth.data.UserInfoViewModel
+import com.example.gihealth.data.WellBeingViewModel
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,21 +37,22 @@ fun ProfileScreen(navController: NavController) {
         )
     )
 
-    val wellBeingViewModel: WellBeingViewModel = viewModel(
-        factory = ViewModelProvider.AndroidViewModelFactory(
-            context.applicationContext as Application
-        )
-    )
+
+    val wellBeingViewModel: WellBeingViewModel = viewModel()
 
     val wellBeingEntries by wellBeingViewModel.entries.observeAsState(emptyList())
-    val latestWeight = wellBeingEntries.maxByOrNull { it.timestamp }?.weight
+
+    val latestWeight = wellBeingEntries
+        .sortedByDescending { it.timestamp }
+        .firstOrNull()
+        ?.weight
 
     val userInfo by userInfoViewModel.userInfo.observeAsState()
 
     var isEditing by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var showDobDialog by remember { mutableStateOf(false) }
 
-    // Editable fields
     var name by remember { mutableStateOf("") }
     var dob by remember { mutableStateOf("") }
     var weight by remember { mutableStateOf("") }
@@ -68,7 +76,8 @@ fun ProfileScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
@@ -83,7 +92,7 @@ fun ProfileScreen(navController: NavController) {
             ProfileField(
                 "Weight",
                 latestWeight?.let { "${it.toInt()} lbs" }
-                    ?: userInfo?.weight?.toString()
+                    ?: userInfo?.weight?.let { "${it.toInt()} lbs" }
                     ?: "—"
             )
 
@@ -104,120 +113,65 @@ fun ProfileScreen(navController: NavController) {
 
         } else {
 
-            // NAME
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
-                isError = name.isBlank(),
+                label = { Text("Name *") },
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // DOB
-            OutlinedTextField(
-                value = dob,
-                onValueChange = { if (it.length <= 10) dob = it },
-                label = { Text("Date of Birth (MM/DD/YYYY)") },
-                isError = dob.isBlank(),
+            // DOB BOX
+            Text(
+                text = "Date of Birth *",
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .border(
+                        1.dp,
+                        if (dob.isBlank()) Color.Red else Color.DarkGray,
+                        MaterialTheme.shapes.small
+                    )
+                    .clickable { showDobDialog = true }
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(
+                    text = dob.ifBlank { "MM/DD/YYYY" },
+                    color = if (dob.isBlank()) Color.Gray else Color.Black
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // WEIGHT
             OutlinedTextField(
                 value = weight,
-                onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' } },
-                label = { Text("Weight (lbs)") },
-                isError = weight.isBlank(),
+                onValueChange = {
+                    if (it.all { c -> c.isDigit() || c == '.' }) weight = it
+                },
+                label = { Text("Weight (lbs) *") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // GENDER
-            var expandedGender by remember { mutableStateOf(false) }
-            val genderOptions = listOf("Male", "Female", "Non-binary", "Prefer not to say")
-
-            ExposedDropdownMenuBox(
-                expanded = expandedGender,
-                onExpandedChange = { expandedGender = !expandedGender }
-            ) {
-                OutlinedTextField(
-                    value = gender,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Gender") },
-                    isError = gender.isBlank(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGender) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedGender,
-                    onDismissRequest = { expandedGender = false }
-                ) {
-                    genderOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                gender = option
-                                expandedGender = false
-                            }
-                        )
-                    }
-                }
-            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // BLOOD TYPE
-            var expandedBloodType by remember { mutableStateOf(false) }
-            val bloodTypeOptions = listOf(
-                "A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "Not sure"
-            )
-
-            ExposedDropdownMenuBox(
-                expanded = expandedBloodType,
-                onExpandedChange = { expandedBloodType = !expandedBloodType }
-            ) {
-                OutlinedTextField(
-                    value = bloodType,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Blood Type") },
-                    isError = bloodType.isBlank(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBloodType) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedBloodType,
-                    onDismissRequest = { expandedBloodType = false }
-                ) {
-                    bloodTypeOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                bloodType = option
-                                expandedBloodType = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // CONDITIONS
             OutlinedTextField(
                 value = disease,
                 onValueChange = { disease = it },
                 label = { Text("Conditions") },
-                isError = disease.isBlank(),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // TRIGGERS (OPTIONAL)
             OutlinedTextField(
                 value = triggers,
                 onValueChange = { triggers = it },
@@ -228,67 +182,67 @@ fun ProfileScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             if (errorMessage.isNotEmpty()) {
-                Text(
-                    text = errorMessage,
-                    color = Color.Red,
-                    fontSize = 14.sp
-                )
+                Text(errorMessage, color = Color.Red)
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
+            Button(
+                onClick = {
+
+                    if (
+                        name.isBlank() ||
+                        dob.isBlank() ||
+                        weight.isBlank()
+                    ) {
+                        errorMessage = "Please complete all required fields."
+                        return@Button
+                    }
+
+                    errorMessage = ""
+
+                    userInfoViewModel.saveUserInfo(
+                        name = name,
+                        age = 0,
+                        bloodType = bloodType,
+                        weight = weight.toFloatOrNull() ?: 0f,
+                        gender = gender,
+                        disease = disease,
+                        triggers = triggers,
+                        dob = dob
+                    )
+
+                    isEditing = false
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
-                    onClick = {
-
-                        if (
-                            name.isBlank() ||
-                            dob.isBlank() ||
-                            weight.isBlank() ||
-                            gender.isBlank() ||
-                            bloodType.isBlank() ||
-                            disease.isBlank()
-                        ) {
-                            errorMessage = "Please complete all required fields."
-                            return@Button
-                        }
-
-                        errorMessage = ""
-
-                        userInfoViewModel.saveUserInfo(
-                            name = name,
-                            age = 0,
-                            bloodType = bloodType,
-                            weight = weight.toFloatOrNull() ?: 0f,
-                            gender = gender,
-                            disease = disease,
-                            triggers = triggers,
-                            dob = dob
-                        )
-
-                        isEditing = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58))
-                ) {
-                    Text("Save", color = Color.White)
-                }
-
-                OutlinedButton(onClick = { isEditing = false }) {
-                    Text("Cancel")
-                }
+                Text("Save", color = Color.White)
             }
         }
     }
+
+    if (showDobDialog) {
+        DobDialog(
+            onDismiss = { showDobDialog = false },
+            onConfirm = {
+                dob = it
+                showDobDialog = false
+            }
+        )
+    }
 }
-
-
 @Composable
 fun ProfileField(label: String, value: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = label, fontWeight = FontWeight.Bold)
-        Text(text = value.ifBlank { "—" })
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold
+        )
+
+        Text(
+            text = value.ifBlank { "—" }
+        )
+
         Spacer(modifier = Modifier.height(12.dp))
     }
 }
