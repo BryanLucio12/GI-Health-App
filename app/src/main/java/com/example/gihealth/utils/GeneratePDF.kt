@@ -23,7 +23,7 @@ fun generatePdfReport(
     context: Context,
     symptoms: List<SymptomEntity>,
     answers: PdfQuestionnaireAnswers,
-    userInfo: UserInfoEntity? = null,
+    userInfo: UserInfoEntity?,
     symptomsList: List<SymptomEntity>,
     wellBeingList: List<WellBeingEntity>,
 )
@@ -48,8 +48,6 @@ fun generatePdfReport(
         isAntiAlias = true
         color = android.graphics.Color.BLACK
     }
-
-    val tempDob = "08/11/2026"
 
 
     // make page 1 of questionnaire
@@ -240,32 +238,30 @@ fun generatePdfReport(
         }
 
 
+    if (hasRecentSymptom(symptoms, setOf("Joint pain"))) {
+        canvas1.drawText("✔", COMPLICATION_COL1_X, JOINT_PAIN_Y, paint)
+    }
 
-     if (report.hasJointPain) {
-         canvas2.drawText("✔", COMPLICATION_COL1_X, 2290f, paint)
-     }
+    if (hasRecentSymptom(symptoms, setOf("Rashes", "Itching"))) {
+        canvas1.drawText("✔", COMPLICATION_COL1_X, SKIN_ISSUES_Y, paint)
+    }
 
-     if (report.hasSkinIssues) {
-         canvas2.drawText("✔", COMPLICATION_COL1_X, 2350f, paint)
-     }
+    if (hasRecentSymptom(symptoms, setOf("Eye pain", "Eye irritation", "Eye Redness"))) {
+        canvas1.drawText("✔", COMPLICATION_COL2_X, EYE_ISSUES_Y, paint)
+    }
 
-     if (report.hasEyeIssues) {
-         canvas2.drawText("✔", COMPLICATION_COL2_X, 2290f, paint)
-     }
-
-     if (report.hasLiverIssues) {
-         canvas2.drawText("✔", COMPLICATION_COL2_X, 2350f, paint)
-     }
-
-     if (report.hasKidneyIssues) {
-         canvas2.drawText("✔", COMPLICATION_COL3_X, 2290f, paint)
-     }
-
-     if (report.hasRectalIssues) {
-         canvas2.drawText("✔", COMPLICATION_COL3_X, 2350f, paint)
-     }
+    if (hasRecentSymptom(symptoms, setOf("Jaundice"))) {
+        canvas1.drawText("✔", COMPLICATION_COL2_X, LIVER_ISSUES_Y, paint)
+    }
 
 
+    if (hasRecentSymptom(symptoms, setOf("Blood in urine", "Dark urine"))) {
+        canvas1.drawText("✔", COMPLICATION_COL3_X, KIDNEY_ISSUES_Y, paint)
+    }
+
+    if (hasRecentSymptom(symptoms, setOf("Anorectal pain/itching", "Blood in stool"))) {
+        canvas1.drawText("✔", COMPLICATION_COL3_X, RECTAL_ISSUES_Y, paint)
+    }
 
     answers.question9a?.let { value ->
         val checkboxY = when (value) {
@@ -322,7 +318,7 @@ fun generatePdfReport(
 
 
 
-    // page 3 (page 1 of GI Alliance form)
+    // PAGE 3 (page 1 of GI Alliance form)
     val page3Bitmap = BitmapFactory.decodeStream(
         context.assets.open("alliance_page_1.png")
     )
@@ -352,78 +348,78 @@ fun generatePdfReport(
         canvas3.drawText(name, ALLIANCE_NAME_X, ALLIANCE_NAME_Y, headerPaint)
     }
 
-    canvas3.drawText(
-        tempDob,
-        ALLIANCE_DOB_X,
-        ALLIANCE_DOB_Y,
-        headerPaint
-    )
+     val dobText = userInfo?.dob?.trim().orEmpty()
+
+     if (dobText.isNotBlank()) {
+         canvas3.drawText(
+             dobText,
+             ALLIANCE_DOB_X,
+             ALLIANCE_DOB_Y,
+             headerPaint
+         )
+     }
 
      val zone = java.time.ZoneId.systemDefault()
      val today = java.time.LocalDate.now()
      val startDay = today.minusDays(6)
 
-// Stress
+
+// WELLBEING
      val last7WellBeing = wellBeingList.filter { entry ->
-         val d = java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
+         val d = java.time.Instant.ofEpochMilli(entry.timestamp)
+             .atZone(zone)
+             .toLocalDate()
          d in startDay..today
      }
 
-     val latestStressPerDay: Map<java.time.LocalDate, WellBeingEntity> =
+     val latestWellBeingPerDay: Map<java.time.LocalDate, WellBeingEntity> =
          last7WellBeing
              .groupBy { entry ->
-                 java.time.Instant.ofEpochMilli(entry.timestamp).atZone(zone).toLocalDate()
+                 java.time.Instant.ofEpochMilli(entry.timestamp)
+                     .atZone(zone)
+                     .toLocalDate()
              }
              .mapValues { (_, list) -> list.maxByOrNull { it.timestamp }!! }
 
-     val todayStressRatingLocal: Int? = latestStressPerDay[today]?.stressRating
+
+// LOOSE STOOLS
+     val todayLooseStools =
+         latestWellBeingPerDay[today]?.looseStoolsCount ?: 0
+
+     val pastWeekLooseStools =
+         (0..6).sumOf { i ->
+             val day = startDay.plusDays(i.toLong())
+             latestWellBeingPerDay[day]?.looseStoolsCount ?: 0
+         }
+
+     val stoolTextPaint = Paint(paint).apply { textSize = 36f }
+
+     canvas3.drawText(
+         todayLooseStools.toString(),
+         STOOLS_TODAY_X,
+         STOOLS_TODAY_Y,
+         stoolTextPaint
+     )
+
+     canvas3.drawText(
+         pastWeekLooseStools.toString(),
+         STOOLS_WEEK_X,
+         STOOLS_WEEK_Y,
+         stoolTextPaint
+     )
+
+
+// STRESS
+     val todayStressRatingLocal: Int? =
+         latestWellBeingPerDay[today]?.stressRating
 
      val weeklyAvgStressRatingLocal: Double? =
-         if (latestStressPerDay.isNotEmpty())
-             latestStressPerDay.values.map { it.stressRating }.average()
-         else
-             null
+         if (latestWellBeingPerDay.isNotEmpty())
+             latestWellBeingPerDay.values
+                 .map { it.stressRating }
+                 .average()
+         else null
 
-     answers.generalWellBeing?.let { value ->
-         ALLIANCE_GENERAL_WELL_BEING_POSITIONS[value]?.let { (x, y) ->
-             canvas3.drawText("✔", x, y, paint)
-         }
-     }
-     answers.rectalBleedingToday?.let { value ->
-         ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS[value]?.let { (x, y) ->
-             canvas3.drawText("✔", x, y, paint)
-         }
-     }
-
-
-// Abdominal pain
-     val abdominalPainLogs = symptomsList.filter { it.name == "Abdominal pain" }
-
-// today pain
-     val startOfTodayMillis = today.atStartOfDay(zone).toInstant().toEpochMilli()
-     val todayAbdominalPainLocal: Int =
-         abdominalPainLogs
-             .filter { it.timestamp >= startOfTodayMillis }
-             .maxByOrNull { it.timestamp }
-             ?.severity
-             ?: 0
-
-// weekly pain
-     val dailyPainValues = (0..6).map { offset ->
-         val date = today.minusDays(offset.toLong())
-         val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
-         val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-
-         abdominalPainLogs
-             .filter { it.timestamp in dayStart until dayEnd }
-             .maxByOrNull { it.timestamp }
-             ?.severity
-             ?: 0
-     }
-     val weeklyAvgAbdominalPainLocal: Double = dailyPainValues.average()
-
-
-     // Stress rating
      todayStressRatingLocal?.let { stress ->
          val option = q1AllianceToday(stress)
          ALLIANCE_TODAY_POSITIONS[option]?.let { (x, y) ->
@@ -438,7 +434,52 @@ fun generatePdfReport(
          }
      }
 
-     // Abdominal Pain
+
+
+// RECTAL BLEEDING
+     answers.rectalBleedingToday?.let { value ->
+         ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS[value]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+     //COMMENTED OUT UNTIL FIXED MERGE
+     //   answers.generalWellBeing?.let { value ->
+     //      ALLIANCE_GENERAL_WELL_BEING_POSITIONS[value]?.let { (x, y) ->
+     //         canvas3.drawText("✔", x, y, paint)
+     //      }
+     //  }
+
+
+// ABDOMINAL PAIN (from symptoms)
+     val abdominalPainLogs =
+         symptomsList.filter { it.name == "Abdominal pain" }
+
+// Today
+     val startOfTodayMillis =
+         today.atStartOfDay(zone).toInstant().toEpochMilli()
+
+     val todayAbdominalPainLocal: Int =
+         abdominalPainLogs
+             .filter { it.timestamp >= startOfTodayMillis }
+             .maxByOrNull { it.timestamp }
+             ?.severity
+             ?: 0
+
+// Weekly average
+     val dailyPainValues = (0..6).map { offset ->
+         val date = today.minusDays(offset.toLong())
+         val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+         val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+
+         abdominalPainLogs
+             .filter { it.timestamp in dayStart until dayEnd }
+             .maxByOrNull { it.timestamp }
+             ?.severity
+             ?: 0
+     }
+
+     val weeklyAvgAbdominalPainLocal = dailyPainValues.average()
+
      run {
          val label = allianceAbdominalPainToday(todayAbdominalPainLocal)
          ALLIANCE_AB_PAIN_TODAY_POSITIONS[label]?.let { (x, y) ->
@@ -452,6 +493,84 @@ fun generatePdfReport(
              canvas3.drawText("✔", x, y, paint)
          }
      }
+
+     val complicationNames = listOf(
+         "Joint Pain",
+         "Eye Pain",
+         "Red Nodules on Legs",
+         "Mouth Sores",
+         "Skin Ulcers",
+         "Anal Fissure",
+         "New Fistula",
+         "Abscess"
+     )
+
+     val hasAnyComplication = complicationNames.any { name ->
+         hasRecentComplication(symptomsList, name)
+     }
+
+     if (!hasAnyComplication) {
+         // Check "None"
+         ALLIANCE_COMPLICATION_POSITIONS["None"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     } else {
+         // Check the ones that exist
+         complicationNames.forEach { name ->
+             if (hasRecentComplication(symptomsList, name)) {
+                 ALLIANCE_COMPLICATION_POSITIONS[name]?.let { (x, y) ->
+                     canvas3.drawText("✔", x, y, paint)
+                 }
+             }
+         }
+     }
+
+     // Hepatitis Screening
+     answers.hxHepB?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["hx_hep_b"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     answers.hepBVaccinated?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["hep_b_vax"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     answers.hepBPositiveTest?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["hep_b_positive"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     answers.illicitDrugUse?.takeIf { it == 1 }?.let {
+         ALLIANCE_HEP_SCREENING_POSITIONS["illicit_drugs"]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
+     fun drawTB(key: String, checked: Int?) {
+         if (checked == 1) {
+             ALLIANCE_TB_POSITIONS[key]?.let { (x, y) ->
+                 canvas3.drawText("✔", x, y, paint)
+             }
+         }
+     }
+
+     drawTB("positiveTbTest", answers.positiveTbTest)
+     drawTB("hxTbDisease", answers.hxTbDisease)
+     drawTB("treatedActiveOrLatentTb", answers.treatedActiveOrLatentTb)
+     drawTB("traveledOutsideRecently", answers.traveledOutsideRecently)
+     drawTB("liveVaccinationsRecently", answers.liveVaccinationsRecently)
+     drawTB("healthcareHighRiskWorker", answers.healthcareHighRiskWorker)
+
+     answers.rectalBleedingWeek?.let { value ->
+         ALLIANCE_RECTAL_BLEEDING_WEEK_POSITIONS[value]?.let { (x, y) ->
+             canvas3.drawText("✔", x, y, paint)
+         }
+     }
+
 
      canvas3.restore()
     pdf.finishPage(page3)
@@ -471,25 +590,23 @@ fun generatePdfReport(
     val page4 = pdf.startPage(page4Info)
     val canvas4 = page4.canvas
 
-    // center smaller bitmap of page 4 inside full size PDF page of 1 and 2
+    // center samller bitmap of page 4 inside full size pdf page of 1 and 2
 
     val offsetX4 = (referencePageWidth - page4Bitmap.width*scaleFactor) / 2f
     val offsetY4 = (referencePageHeight - page4Bitmap.height*scaleFactor) / 2f
-
+    canvas4.drawBitmap(page4Bitmap, offsetX4, offsetY4, null)
 
     canvas4.save()                     // save current canvas state
-     canvas4.translate(offsetX4, offsetY4)
-     canvas4.scale(scaleFactor, scaleFactor)
-     canvas4.drawBitmap(page4Bitmap, 0f, 0f, null)
-
-     symptomsList.forEach { symptom ->
-         val key = symptom.name.trim()
-         val pos = ALLIANCE_PAGE4_SYMPTOM_POSITIONS[key]
-         if (pos != null) {
-             val (x, y) = pos
-             canvas4.drawText("✔", x, y, paint)  // NO manual scaling
-         }
-     }
+    canvas4.scale(scaleFactor, scaleFactor)
+    canvas4.drawBitmap(page4Bitmap, offsetX4 / scaleFactor, offsetY4 / scaleFactor, null)
+    symptoms.forEach { symptom ->
+        val key = symptom.name.trim() // match keys in ALLIANCE_PAGE4_SYMPTOM_POSITIONS
+        val pos = ALLIANCE_PAGE4_SYMPTOM_POSITIONS[key]
+        if (pos != null) {
+            val (x, y) = pos
+            canvas4.drawText("✔", x*scaleFactor, y*scaleFactor, paint)
+        }
+    }
 
     canvas4.restore()
 
@@ -588,16 +705,17 @@ private val challengeFrequencyX = mapOf(
 )
 
 
-private fun q1AllianceToday(stressRating: Int): String {
-    val s = stressRating.coerceIn(1, 10)
+private fun q1AllianceToday(generalWellBeing: Int): String {
+    val s = generalWellBeing.coerceIn(1, 10)
     return when (s) {
-        1, 2 -> "very well"
-        3, 4 -> "slightly below par"
+        1, 2 -> "terrible"
+        3, 4 -> "very poor"
         5, 6 -> "poor"
-        7, 8 -> "very poor"
-        else -> "terrible" // 9-10
+        7, 8 -> "slightly below par"
+        else -> "very well" // 9-10
     }
 }
+
 
 private val ALLIANCE_TODAY_POSITIONS = mapOf(
     "very well" to Pair(267f, 390f),
@@ -631,11 +749,11 @@ private val ALLIANCE_AB_PAIN_WEEKLY_POSITIONS = mapOf(
 private fun q1AllianceWeekly(avg: Double): String {
     val a = avg.coerceIn(1.0, 10.0)
     return when {
-        a < 2.5 -> "very well"
-        a < 4.5 -> "slightly below par"
+        a < 2.5 -> "terrible"
+        a < 4.5 -> "very poor"
         a < 6.5 -> "poor"
-        a < 8.5 -> "very poor"
-        else -> "terrible"
+        a < 8.5 -> "slightly below par"
+        else -> "very well"
     }
 }
 
@@ -662,79 +780,79 @@ private fun allianceAbdominalPainWeekly(avg: Double): String {
 
 private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
     // Gastrointestinal
-    "Abdominal pain" to Pair(260f, 260f),//260
-    "Anorectal pain/itching" to Pair(260f, 295f),
-    "Bloating/gas" to Pair(260f, 330f),
-    "Blood in stool" to Pair(260f, 365f),
-    "Bowel Movement" to Pair(260f, 400f),
-    "Constipation" to Pair(260f, 435f),
-    "Diarrhea" to Pair(260f, 470f),
-    "Incontinence of stool" to Pair(260f, 505f),
-    "Heartburn/reflux" to Pair(260f, 540f),
-    "Difficulty swallowing" to Pair(260f, 575f),
-    "Nausea" to Pair(260f, 605f),
-    "Vomiting" to Pair(260f, 640f),
-    "Black tarry stools" to Pair(260f, 675f),
+    "Abdominal pain" to Pair(225f, 240f),
+    "Anorectal pain/itching" to Pair(225f, 270f),
+    "Bloating/gas" to Pair(225f, 290f),
+    "Blood in stool" to Pair(225f, 310f),
+    "Bowel Movement" to Pair(225f, 330f),
+    "Constipation" to Pair(225f, 350f),
+    "Diarrhea" to Pair(225f, 370f),
+    "Incontinence of stool" to Pair(225f, 390f),
+    "Heartburn/reflux" to Pair(225f, 410f),
+    "Difficulty swallowing" to Pair(225f, 430f),
+    "Nausea" to Pair(225f, 450f),
+    "Vomiting" to Pair(225f, 470f),
+    "Black tarry stools" to Pair(225f, 530f),
 
     // Genitourinary
-    "Dark urine" to Pair(260f, 800f),
-    "Heavy menstruation" to Pair(260f, 835f),
-    "Pregnancy" to Pair(260f, 870f),
-    "Frequent urination" to Pair(260f, 905f),
-    "Blood in urine" to Pair(260f, 940f),
+    "Dark urine" to Pair(225f, 695f),
+    "Heavy menstruation" to Pair(225f, 715f),
+    "Pregnancy" to Pair(225f, 735f),
+    "Frequent urination" to Pair(225f, 755f),
+    "Blood in urine" to Pair(225f, 775f),
 
     // Integumentary
-    "Itching" to Pair(260f, 1070f),
-    "Jaundice" to Pair(260f, 1105f),
-    "Rashes" to Pair(260f, 1140f),
+    "Itching" to Pair(225f, 815f),
+    "Jaundice" to Pair(225f, 835f),
+    "Rashes" to Pair(225f, 855f),
 
     // Neurological
-    "Frequent headaches" to Pair(700f, 260f),
-    "Memory loss/confusion" to Pair(700f, 295f),
-    "Numbness or tingling" to Pair(700f, 330f),
+    "Frequent headaches" to Pair(720f, 420f),
+    "Memory loss/confusion" to Pair(720f, 440f),
+    "Numbness or tingling" to Pair(720f, 460f),
 
     // Endocrine
-    "Cold intolerance" to Pair(700f, 470f),
-    "Excessive thirst" to Pair(700f, 505f),
+    "Cold intolerance" to Pair(720f, 500f),
+    "Excessive thirst" to Pair(720f, 520f),
 
     // Constitutional
-    "Fatigue" to Pair(700f, 630f),
-    "Fever" to Pair(700f, 665f),
-    "Loss of appetite" to Pair(700f, 700f),
-    "Night sweats" to Pair(700f, 735f),
-    "Weight gain" to Pair(700f, 770f),
-    "Weight loss" to Pair(700f, 805f),
+    "Fatigue" to Pair(720f, 560f),
+    "Fever" to Pair(720f, 580f),
+    "Loss of appetite" to Pair(720f, 600f),
+    "Night sweats" to Pair(720f, 620f),
+    "Weight gain" to Pair(720f, 640f),
+    "Weight loss" to Pair(720f, 660f),
 
     // Psychiatric
-    "Anxiety" to Pair(700f, 940f),
-    "Depression" to Pair(700f, 975f),
+    "Anxiety" to Pair(720f, 700f),
+    "Depression" to Pair(720f, 720f),
 
     // ENT
-    "Double vision" to Pair(700f, 1105f),
-    "Eye irritation" to Pair(700f, 1140f),
-    "Eye pain" to Pair(700f, 1175f),
-    "Eye Redness" to Pair(700f, 1205f),
-    "Sore throat" to Pair(700f, 1240f),
-    "Hoarseness" to Pair(700f, 1275f),
-    "Mouth sores" to Pair(700f, 1310f),
+    "Double vision" to Pair(720f, 760f),
+    "Eye irritation" to Pair(720f, 780f),
+    "Eye pain" to Pair(720f, 800f),
+    "Eye Redness" to Pair(720f, 820f),
+    "Sore throat" to Pair(720f, 840f),
+    "Hoarseness" to Pair(720f, 860f),
+    "Mouth sores" to Pair(720f, 880f),
 
     // Hematologic/Lymphatic
-    "Easy bruising" to Pair(1125f, 260f),
-    "Prolonged bleeding" to Pair(1125f, 290f),
+    "Easy bruising" to Pair(1260f, 420f),
+    "Prolonged bleeding" to Pair(1260f, 440f),
 
     // Musculoskeletal
-    "Back pain" to Pair(1125f, 435f),
-    "Joint pain" to Pair(1125f, 470f),
+    "Back pain" to Pair(1260f, 480f),
+    "Joint pain" to Pair(1260f, 500f),
 
     // Respiratory
-    "Frequent cough" to Pair(1125f, 600f),
-    "Snoring" to Pair(1125f, 630f),
-    "Sleep apnea" to Pair(1125f, 665f),
-    "Wheezing" to Pair(1125f, 700f),
-    "Shortness of breath" to Pair(1125f, 735f),
+    "Frequent cough" to Pair(1260f, 540f),
+    "Snoring" to Pair(1260f, 560f),
+    "Sleep apnea" to Pair(1260f, 580f),
+    "Wheezing" to Pair(1260f, 600f),
+    "Shortness of breath" to Pair(1260f, 620f),
 
     // Allergies
-    "Allergies" to Pair(1125f, 870f)
+    "Allergies" to Pair(1260f, 660f)
 )
 
 
@@ -773,6 +891,13 @@ private const val ALLIANCE_NAME_Y = 290f
 private const val ALLIANCE_DOB_X = 1200f
 private const val ALLIANCE_DOB_Y = 290f
 
+private const val STOOLS_TODAY_X = 600f
+
+private const val STOOLS_TODAY_Y = 938f
+
+private const val STOOLS_WEEK_X = 1360f
+
+private const val STOOLS_WEEK_Y = 938f
 
 // Rectal bleeding X positions
 private const val RECTAL_X_LEFT = 911f       // Never, Trace
@@ -839,6 +964,12 @@ private const val COMPLICATION_COL1_X = 932f
 private const val COMPLICATION_COL2_X = 1256f
 private const val COMPLICATION_COL3_X = 1632f
 
+private const val JOINT_PAIN_Y = 3400f
+private const val SKIN_ISSUES_Y = 3465f
+private const val EYE_ISSUES_Y = 3400f
+private const val LIVER_ISSUES_Y = 3465f
+private const val KIDNEY_ISSUES_Y = 3400f
+private const val RECTAL_ISSUES_Y = 3465f
 
 
 private fun hasRecentSymptom(
@@ -851,15 +982,53 @@ private fun hasRecentSymptom(
     }
 }
 
-private val ALLIANCE_GENERAL_WELL_BEING_POSITIONS = mapOf(
-    0 to Pair(267f, 390f),
-    1 to Pair(267f, 435f),
-    2 to Pair(267f, 480f),
-    3 to Pair(267f, 522f),
-    4 to Pair(267f, 567f)
+private val ALLIANCE_COMPLICATION_POSITIONS = mapOf(
+    "None" to Pair(267f, 1280f),
+    "Joint Pain" to Pair(267f, 1324f),
+    "Eye Pain" to Pair(267f, 1368f),
+    "Red Nodules on Legs" to Pair(267f, 1412f),
+    "Mouth Sores" to Pair(267f, 1456f),
+    "Skin Ulcers" to Pair(267f, 1500f),
+    "Anal Fissure" to Pair(267f, 1544f),
+    "New Fistula" to Pair(267f, 1588f),
+    "Abscess" to Pair(267f, 1632f)
+)
+
+private val ALLIANCE_HEP_SCREENING_POSITIONS = mapOf(
+    "hx_hep_b" to Pair(267f, 1742f),
+    "hep_b_vax" to Pair(267f, 1786f),
+    "hep_b_positive" to Pair(267f, 1830f),
+    "illicit_drugs" to Pair(267f, 1874f)
+)
+
+private val ALLIANCE_TB_POSITIONS = mapOf(
+    "positiveTbTest" to Pair(954f, 1280f),
+    "hxTbDisease" to Pair(954f, 1324f),
+    "treatedActiveOrLatentTb" to Pair(954f, 1368f),
+    "traveledOutsideRecently" to Pair(954f, 1412f),
+    "liveVaccinationsRecently" to Pair(954f, 1491f),
+    "healthcareHighRiskWorker" to Pair(954f, 1535f)
+)
+
+private val ALLIANCE_RECTAL_BLEEDING_WEEK_POSITIONS = mapOf(
+    0 to Pair(954f, 1035f),
+    1 to Pair(954f, 1080f),
+    2 to Pair(954f, 1125f),
+    3 to Pair(954f, 1170f)
 )
 
 
+private fun hasRecentComplication(
+    symptoms: List<SymptomEntity>,
+    name: String,
+    days: Long = 30L
+): Boolean {
+    val cutoff = System.currentTimeMillis() - days * 24 * 60 * 60 * 1000
+    val target = name.trim().lowercase()
+    return symptoms.any {
+        it.timestamp >= cutoff && it.name.trim().lowercase() == target
+    }
+}
 
 private val ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS = mapOf(
     0 to Pair(267f, 1035f),
@@ -867,4 +1036,3 @@ private val ALLIANCE_RECTAL_BLEEDING_TODAY_POSITIONS = mapOf(
     2 to Pair(267f, 1125f),
     3 to Pair(267f, 1170f)
 )
-

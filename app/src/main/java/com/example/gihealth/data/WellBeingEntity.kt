@@ -14,5 +14,6 @@ data class WellBeingEntity(
     val sleepNote: String,
     val stressRating: Int,
     val stressNote: String,
-    val date: String
+    val date: String,
+    val looseStoolsCount: Int = 0
 )

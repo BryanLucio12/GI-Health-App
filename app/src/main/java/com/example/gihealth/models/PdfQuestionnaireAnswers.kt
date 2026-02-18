@@ -36,8 +36,19 @@ data class PdfQuestionnaireAnswers(
     // USER Question 5
     val question10a: String?,
 
-    val generalWellBeing: Int?,
 
+    val hxHepB: Int? = null,
+    val hepBVaccinated: Int? = null,
+    val hepBPositiveTest: Int? = null,
+    val illicitDrugUse: Int? = null,
+    val positiveTbTest: Int? = null,
+    val hxTbDisease: Int? = null,
+    val treatedActiveOrLatentTb: Int? = null,
+    val traveledOutsideRecently: Int? = null,
+    val liveVaccinationsRecently: Int? = null,
+    val healthcareHighRiskWorker: Int? = null,
+
+    val rectalBleedingWeek: Int? = null,
     val rectalBleedingToday: Int?
 
 )
