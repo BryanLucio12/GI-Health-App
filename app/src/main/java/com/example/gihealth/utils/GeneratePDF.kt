@@ -576,35 +576,41 @@ fun generatePdfReport(
     pdf.finishPage(page3)
 
 
+
+
+
+
     // page 4 (page 2 of GI Alliance form)
     val page4Bitmap = BitmapFactory.decodeStream(
         context.assets.open("alliance_page_2.png")
     )
 
-    val page4Info = PdfDocument.PageInfo.Builder(
-        referencePageWidth,
-        referencePageHeight,
-        4
-    ).create()
+     val page4Info = PdfDocument.PageInfo.Builder(
+         referencePageWidth,
+         referencePageHeight,
+         4
+     ).create()
 
-    val page4 = pdf.startPage(page4Info)
-    val canvas4 = page4.canvas
+     val page4 = pdf.startPage(page4Info)
+     val canvas4 = page4.canvas
 
     // center samller bitmap of page 4 inside full size pdf page of 1 and 2
 
-    val offsetX4 = (referencePageWidth - page4Bitmap.width*scaleFactor) / 2f
-    val offsetY4 = (referencePageHeight - page4Bitmap.height*scaleFactor) / 2f
-    canvas4.drawBitmap(page4Bitmap, offsetX4, offsetY4, null)
+     val scaleFactorPg4 = 1.4f
+     val offsetX4 = (referencePageWidth - page4Bitmap.width * scaleFactorPg4) / 2f
+     val offsetY4 = (referencePageHeight - page4Bitmap.height * scaleFactorPg4) / 2f
 
-    canvas4.save()                     // save current canvas state
-    canvas4.scale(scaleFactor, scaleFactor)
-    canvas4.drawBitmap(page4Bitmap, offsetX4 / scaleFactor, offsetY4 / scaleFactor, null)
-    symptoms.forEach { symptom ->
+     canvas4.save()                     // save current canvas state
+     canvas4.translate(offsetX4, offsetY4)
+     canvas4.scale(scaleFactorPg4, scaleFactorPg4)
+     canvas4.drawBitmap(page4Bitmap, 0f, 0f, null)
+
+
+
+     symptomsList.forEach { symptom ->
         val key = symptom.name.trim() // match keys in ALLIANCE_PAGE4_SYMPTOM_POSITIONS
-        val pos = ALLIANCE_PAGE4_SYMPTOM_POSITIONS[key]
-        if (pos != null) {
-            val (x, y) = pos
-            canvas4.drawText("✔", x*scaleFactor, y*scaleFactor, paint)
+         ALLIANCE_PAGE4_SYMPTOM_POSITIONS[key]?.let { (x, y) ->
+             canvas4.drawText("✔", x, y, paint)
         }
     }
 
@@ -780,79 +786,80 @@ private fun allianceAbdominalPainWeekly(avg: Double): String {
 
 private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
     // Gastrointestinal
-    "Abdominal pain" to Pair(225f, 240f),
-    "Anorectal pain/itching" to Pair(225f, 270f),
-    "Bloating/gas" to Pair(225f, 290f),
-    "Blood in stool" to Pair(225f, 310f),
-    "Bowel Movement" to Pair(225f, 330f),
-    "Constipation" to Pair(225f, 350f),
-    "Diarrhea" to Pair(225f, 370f),
-    "Incontinence of stool" to Pair(225f, 390f),
-    "Heartburn/reflux" to Pair(225f, 410f),
-    "Difficulty swallowing" to Pair(225f, 430f),
-    "Nausea" to Pair(225f, 450f),
-    "Vomiting" to Pair(225f, 470f),
-    "Black tarry stools" to Pair(225f, 530f),
+    "Abdominal pain" to Pair(260f, 260f),//260
+    "Anorectal pain/itching" to Pair(260f, 295f),
+    "Bloating/gas" to Pair(260f, 330f),
+    "Blood in stool" to Pair(260f, 365f),
+    "Bowel Movement" to Pair(260f, 400f),
+    "Constipation" to Pair(260f, 435f),
+    "Diarrhea" to Pair(260f, 470f),
+    "Incontinence of stool" to Pair(260f, 505f),
+    "Heartburn/reflux" to Pair(260f, 540f),
+    "Difficulty swallowing" to Pair(260f, 575f),
+    "Nausea" to Pair(260f, 605f),
+    "Vomiting" to Pair(260f, 640f),
+    "Black tarry stools" to Pair(260f, 675f),
 
     // Genitourinary
-    "Dark urine" to Pair(225f, 695f),
-    "Heavy menstruation" to Pair(225f, 715f),
-    "Pregnancy" to Pair(225f, 735f),
-    "Frequent urination" to Pair(225f, 755f),
-    "Blood in urine" to Pair(225f, 775f),
+    "Dark urine" to Pair(260f, 800f),
+    "Heavy menstruation" to Pair(260f, 835f),
+    "Pregnancy" to Pair(260f, 870f),
+    "Frequent urination" to Pair(260f, 905f),
+    "Blood in urine" to Pair(260f, 940f),
 
     // Integumentary
-    "Itching" to Pair(225f, 815f),
-    "Jaundice" to Pair(225f, 835f),
-    "Rashes" to Pair(225f, 855f),
+    "Itching" to Pair(260f, 1070f),
+    "Jaundice" to Pair(260f, 1105f),
+    "Rashes" to Pair(260f, 1140f),
 
     // Neurological
-    "Frequent headaches" to Pair(720f, 420f),
-    "Memory loss/confusion" to Pair(720f, 440f),
-    "Numbness or tingling" to Pair(720f, 460f),
+    "Frequent headaches" to Pair(700f, 260f),
+    "Memory loss/confusion" to Pair(700f, 295f),
+    "Numbness or tingling" to Pair(700f, 330f),
 
     // Endocrine
-    "Cold intolerance" to Pair(720f, 500f),
-    "Excessive thirst" to Pair(720f, 520f),
+    "Cold intolerance" to Pair(700f, 470f),
+    "Excessive thirst" to Pair(700f, 505f),
 
     // Constitutional
-    "Fatigue" to Pair(720f, 560f),
-    "Fever" to Pair(720f, 580f),
-    "Loss of appetite" to Pair(720f, 600f),
-    "Night sweats" to Pair(720f, 620f),
-    "Weight gain" to Pair(720f, 640f),
-    "Weight loss" to Pair(720f, 660f),
+    "Fatigue" to Pair(700f, 630f),
+    "Fever" to Pair(700f, 665f),
+    "Loss of appetite" to Pair(700f, 700f),
+    "Night sweats" to Pair(700f, 735f),
+    "Weight gain" to Pair(700f, 770f),
+    "Weight loss" to Pair(700f, 805f),
 
     // Psychiatric
-    "Anxiety" to Pair(720f, 700f),
-    "Depression" to Pair(720f, 720f),
+    "Anxiety" to Pair(700f, 940f),
+    "Depression" to Pair(700f, 975f),
 
     // ENT
-    "Double vision" to Pair(720f, 760f),
-    "Eye irritation" to Pair(720f, 780f),
-    "Eye pain" to Pair(720f, 800f),
-    "Eye Redness" to Pair(720f, 820f),
-    "Sore throat" to Pair(720f, 840f),
-    "Hoarseness" to Pair(720f, 860f),
-    "Mouth sores" to Pair(720f, 880f),
+    "Double vision" to Pair(700f, 1105f),
+    "Eye irritation" to Pair(700f, 1140f),
+    "Eye pain" to Pair(700f, 1175f),
+    "Eye Redness" to Pair(700f, 1205f),
+    "Sore throat" to Pair(700f, 1240f),
+    "Hoarseness" to Pair(700f, 1275f),
+    "Mouth sores" to Pair(700f, 1310f),
 
     // Hematologic/Lymphatic
-    "Easy bruising" to Pair(1260f, 420f),
-    "Prolonged bleeding" to Pair(1260f, 440f),
+    "Easy bruising" to Pair(1125f, 260f),
+    "Prolonged bleeding" to Pair(1125f, 290f),
+
 
     // Musculoskeletal
-    "Back pain" to Pair(1260f, 480f),
-    "Joint pain" to Pair(1260f, 500f),
+    "Back pain" to Pair(1125f, 435f),
+    "Joint pain" to Pair(1125f, 470f),
 
     // Respiratory
-    "Frequent cough" to Pair(1260f, 540f),
-    "Snoring" to Pair(1260f, 560f),
-    "Sleep apnea" to Pair(1260f, 580f),
-    "Wheezing" to Pair(1260f, 600f),
-    "Shortness of breath" to Pair(1260f, 620f),
+    "Frequent cough" to Pair(1125f, 600f),
+    "Snoring" to Pair(1125f, 630f),
+    "Sleep apnea" to Pair(1125f, 665f),
+    "Wheezing" to Pair(1125f, 700f),
+    "Shortness of breath" to Pair(1125f, 735f),
 
     // Allergies
-    "Allergies" to Pair(1260f, 660f)
+    "Allergies" to Pair(1125f, 870f)
 )
 
 
