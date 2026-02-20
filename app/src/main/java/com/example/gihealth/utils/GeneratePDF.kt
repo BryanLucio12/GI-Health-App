@@ -607,12 +607,32 @@ fun generatePdfReport(
 
 
 
-     symptomsList.forEach { symptom ->
-        val key = symptom.name.trim() // match keys in ALLIANCE_PAGE4_SYMPTOM_POSITIONS
-         ALLIANCE_PAGE4_SYMPTOM_POSITIONS[key]?.let { (x, y) ->
-             canvas4.drawText("✔", x, y, paint)
-        }
-    }
+     val selectedNames = symptomsList
+         .map { it.name.trim() }
+         .toSet()
+
+     ALLIANCE_CATEGORIES.forEach { (categoryName, categorySymptoms) ->
+
+         val selectedInCategory = categorySymptoms
+             .filter { it in selectedNames }
+
+         // draw the symptoms
+         selectedInCategory.forEach { symptomName ->
+             ALLIANCE_PAGE4_SYMPTOM_POSITIONS[symptomName]?.let { (x, y) ->
+                 canvas4.drawText("✔", x, y, paint)
+             }
+         }
+
+         // if none draw will draw a checkmark for none
+         if (selectedInCategory.isEmpty() && categoryName!= "Allergies")  {
+
+             val lastSymptom = categorySymptoms.last()
+
+             ALLIANCE_PAGE4_SYMPTOM_POSITIONS[lastSymptom]?.let { (x, y) ->
+                 canvas4.drawText("✔", x, y + 35f, paint)
+             }
+         }
+     }
 
     canvas4.restore()
 
@@ -862,7 +882,95 @@ private val ALLIANCE_PAGE4_SYMPTOM_POSITIONS = mapOf(
     "Allergies" to Pair(1125f, 870f)
 )
 
+private val ALLIANCE_CATEGORIES = mapOf(
 
+    "Gastrointestinal" to listOf(
+        "Abdominal pain",
+        "Anorectal pain/itching",
+        "Bloating/gas",
+        "Blood in stool",
+        "Bowel Movement",
+        "Constipation",
+        "Diarrhea",
+        "Incontinence of stool",
+        "Heartburn/reflux",
+        "Difficulty swallowing",
+        "Nausea",
+        "Vomiting",
+        "Black tarry stools"
+    ),
+
+    "Genitourinary" to listOf(
+        "Dark urine",
+        "Heavy menstruation",
+        "Pregnancy",
+        "Frequent urination",
+        "Blood in urine"
+    ),
+
+    "Integumentary" to listOf(
+        "Itching",
+        "Jaundice",
+        "Rashes"
+    ),
+
+    "Neurological" to listOf(
+        "Frequent headaches",
+        "Memory loss/confusion",
+        "Numbness or tingling"
+    ),
+
+    "Endocrine" to listOf(
+        "Cold intolerance",
+        "Excessive thirst"
+    ),
+
+    "Constitutional" to listOf(
+        "Fatigue",
+        "Fever",
+        "Loss of appetite",
+        "Night sweats",
+        "Weight gain",
+        "Weight loss"
+    ),
+
+    "Psychiatric" to listOf(
+        "Anxiety",
+        "Depression"
+    ),
+
+    "ENT" to listOf(
+        "Double vision",
+        "Eye irritation",
+        "Eye pain",
+        "Eye Redness",
+        "Sore throat",
+        "Hoarseness",
+        "Mouth sores"
+    ),
+
+    "Hematologic/Lymphatic" to listOf(
+        "Easy bruising",
+        "Prolonged bleeding"
+    ),
+
+    "Musculoskeletal" to listOf(
+        "Back pain",
+        "Joint pain"
+    ),
+
+    "Respiratory" to listOf(
+        "Frequent cough",
+        "Snoring",
+        "Sleep apnea",
+        "Wheezing",
+        "Shortness of breath"
+    ),
+
+    "Allergies" to listOf(
+        "Allergies"
+    )
+)
 
 
 
