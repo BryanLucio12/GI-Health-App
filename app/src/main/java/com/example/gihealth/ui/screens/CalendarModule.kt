@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -184,6 +185,7 @@ fun FullCalendarScreen(
 ) {
     val startDate = initialDate ?: LocalDate.now()
 
+
     var currentMonth by remember(startDate) {
         mutableStateOf(YearMonth.from(startDate))
     }
@@ -195,6 +197,8 @@ fun FullCalendarScreen(
     val today = LocalDate.now()
     val headerFormatter =
         DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.getDefault())
+
+    //Log.d("Calendar", "initialDate = $initialDate")
 
     Scaffold(
         topBar = {

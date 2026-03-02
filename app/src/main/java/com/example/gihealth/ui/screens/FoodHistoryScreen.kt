@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gihealth.ui.viewmodel.FoodHistoryViewModel
 import com.example.gihealth.ui.viewmodel.FoodHistoryViewModelFactory
 import com.example.gihealth.data.*
+import java.net.URLEncoder
 
 @Composable
 fun FoodHistoryScreen(
@@ -93,10 +94,11 @@ fun FoodHistoryScreen(
             )
 
             Spacer(Modifier.height(8.dp))
+            val encodedDate = URLEncoder.encode(date, "UTF-8")
 
             Button(
                 onClick = {
-                    navController.navigate("calendar/$date")
+                    navController.navigate("calendar?date=$encodedDate")
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(

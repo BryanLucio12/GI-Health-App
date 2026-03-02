@@ -55,6 +55,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import java.time.LocalDate
+import java.util.Locale
+import android.util.Log
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 
 
@@ -387,7 +391,8 @@ fun NavHostContainer(
 
         composable("analytics") {
             AnalyticsScreen(
-                onOpenCalendar = { navController.navigate("calendar") },
+                onOpenCalendar = { navController.navigate("calendar")
+                                 },
                 vm = vm,
                 onGeneratePdf = {
                     navController.navigate("pdf_questionnaire")
@@ -426,14 +431,14 @@ fun NavHostContainer(
             val journalEntries by journalViewModel.journalEntries.collectAsState()
             val symptoms by symptomViewModel.symptoms.collectAsState(initial = emptyList())
 
-            val dateString = backStackEntry.arguments?.getString("date")
+            val dateString = backStackEntry.arguments?.getString("date")?.let {
+                URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
+            }
+            //Log.d("Calendar", "dateString from nav = $dateString")
 
             val initialDate = dateString?.let {
-                try {
-                    LocalDate.parse(it, foodDateFormatter)
-                } catch (e: Exception) {
-                    null
-                }
+                try { LocalDate.parse(it, DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)) }
+                catch (e: Exception) { null }
             }
 
             FullCalendarScreen(
