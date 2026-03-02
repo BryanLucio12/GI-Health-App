@@ -18,6 +18,12 @@ interface FoodDao {
     @Query("SELECT * FROM food_table WHERE date = :date ORDER BY id ASC")
     suspend fun getFoodsForDate(date: String): List<FoodEntity>
 
+    @Query("SELECT date FROM food_table WHERE name = :foodName")
+    suspend fun getDatesForFood(foodName: String): List<String>
+
+    @Query("SELECT DISTINCT name FROM food_table ORDER BY name ASC")
+    suspend fun getDistinctFoodNames(): List<String>
+
     @Delete
     suspend fun delete(food: FoodEntity)
 }

@@ -176,13 +176,21 @@ fun MoodCalendarWidget(
 fun FullCalendarScreen(
     onClose: () -> Unit,
     vm: CalendarViewModel,
+    initialDate: LocalDate? = null,
     // You can plug your real data here later:
     getFoodForDate: (LocalDate) -> FoodDay? = { null },
     getJournalForDate: (LocalDate) -> String? = { null },
     getSymptomsForDate: (LocalDate) -> String? = { null }
 ) {
-    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    val startDate = initialDate ?: LocalDate.now()
+
+    var currentMonth by remember(startDate) {
+        mutableStateOf(YearMonth.from(startDate))
+    }
+
+    var selectedDate by remember(startDate) {
+        mutableStateOf(startDate)
+    }
 
     val today = LocalDate.now()
     val headerFormatter =

@@ -52,6 +52,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import java.time.LocalDate
+
+
 
 
 
@@ -376,6 +381,10 @@ fun NavHostContainer(
             LogWeightScreen(navController)
         }
 
+        composable("foodHistory") {
+            FoodHistoryScreen(navController)
+        }
+
         composable("analytics") {
             AnalyticsScreen(
                 onOpenCalendar = { navController.navigate("calendar") },
@@ -393,7 +402,16 @@ fun NavHostContainer(
             )
         }
 
-        composable("calendar") {
+        composable(
+            "calendar?date={date}",
+            arguments = listOf(
+                navArgument("date") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry->
 
             // Food dates (from LogFoodScreen) use "MMM d, yyyy" like "Feb 27, 2025"
             val foodDateFormatter = remember {
@@ -408,9 +426,20 @@ fun NavHostContainer(
             val journalEntries by journalViewModel.journalEntries.collectAsState()
             val symptoms by symptomViewModel.symptoms.collectAsState(initial = emptyList())
 
+            val dateString = backStackEntry.arguments?.getString("date")
+
+            val initialDate = dateString?.let {
+                try {
+                    LocalDate.parse(it, foodDateFormatter)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+
             FullCalendarScreen(
                 onClose = { navController.popBackStack() },
                 vm = vm,
+                initialDate = initialDate,
 
                 // FOOD for selected date
                 getFoodForDate = { date ->

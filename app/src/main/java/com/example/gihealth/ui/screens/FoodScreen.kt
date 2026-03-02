@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,6 +43,29 @@ fun FoodScreen(
                 color = Color.DarkGray
             )
             Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { navController.navigate("foodHistory") },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
+                shape = RoundedCornerShape(25.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(45.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search Food History",
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Search Food History",
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = { navController.navigate("logFood") },
