@@ -43,6 +43,12 @@ interface SymptomDao {
     @Query("SELECT * FROM symptom_table ORDER BY timestamp DESC")
     fun getAllSymptoms(): Flow<List<SymptomEntity>>
 
+    @Query("SELECT DISTINCT name FROM symptom_table ORDER BY name ASC")
+    fun getAllSymptomNames(): Flow<List<String>>
+
+    @Query("SELECT date FROM symptom_table WHERE name = :symptomName ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastLoggedDate(symptomName: String): String?
+
 
     @Delete
     suspend fun delete(symptom: SymptomEntity)

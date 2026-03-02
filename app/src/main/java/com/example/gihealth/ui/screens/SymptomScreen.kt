@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -103,6 +104,21 @@ fun SymptomScreen(
                 color = Color.DarkGray
             )
             Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = { navController.navigate("symptomHistory") }, // navigate to your symptom history screen
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58)),
+                shape = RoundedCornerShape(25.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(45.dp)
+            ) {
+                Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
+                Spacer(Modifier.width(6.dp))
+                Text("Search Recent Symptom", color = Color.White, fontSize = 16.sp)
+            }
+
+            Spacer(Modifier.height(8.dp))
 
             Button(
                 onClick = { navController.navigate("select_symptoms") },

@@ -389,6 +389,10 @@ fun NavHostContainer(
             FoodHistoryScreen(navController)
         }
 
+        composable("symptomHistory") {
+            SymptomHistoryScreen(navController)
+        }
+
         composable("analytics") {
             AnalyticsScreen(
                 //onOpenCalendar = { navController.navigate("calendar") },

@@ -59,7 +59,7 @@ fun FoodScreen(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Search Food History",
+                    text = "Search Recent Food",
                     color = Color.White,
                     fontSize = 16.sp
                 )
