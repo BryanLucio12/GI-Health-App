@@ -40,7 +40,7 @@ import com.example.gihealth.ui.viewmodel.ReportViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
-    onOpenCalendar: () -> Unit,
+    onOpenCalendar: (LocalDate) -> Unit,
     vm: CalendarViewModel,
     onGeneratePdf: () -> Unit
 ) {

@@ -67,7 +67,7 @@ data class FoodDay(
 @Composable
 fun MoodCalendarWidget(
     vm: CalendarViewModel,
-    onOpen: () -> Unit
+    onOpen: (LocalDate) -> Unit
 ) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val today = LocalDate.now()
@@ -75,7 +75,7 @@ fun MoodCalendarWidget(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onOpen() },
+            .clickable { onOpen(today) },
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
@@ -155,7 +155,7 @@ fun MoodCalendarWidget(
                                 DayCell(
                                     date = date,
                                     isSelected = date == today,
-                                    onClick = { onOpen() },
+                                    onClick = { onOpen(date) },
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(vertical = 2.dp)

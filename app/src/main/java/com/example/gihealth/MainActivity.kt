@@ -59,7 +59,7 @@ import java.util.Locale
 import android.util.Log
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-
+import java.net.URLEncoder
 
 
 
@@ -391,8 +391,15 @@ fun NavHostContainer(
 
         composable("analytics") {
             AnalyticsScreen(
-                onOpenCalendar = { navController.navigate("calendar")
-                                 },
+                //onOpenCalendar = { navController.navigate("calendar") },
+                onOpenCalendar = { selectedDate ->
+                    // encode the date for safe navigation
+                    val encoded = URLEncoder.encode(
+                        selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
+                        StandardCharsets.UTF_8.toString()
+                    )
+                    navController.navigate("calendar?date=$encoded")
+                },
                 vm = vm,
                 onGeneratePdf = {
                     navController.navigate("pdf_questionnaire")
@@ -440,6 +447,10 @@ fun NavHostContainer(
                 try { LocalDate.parse(it, DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)) }
                 catch (e: Exception) { null }
             }
+
+            Log.d("Calendar", "raw nav date = ${backStackEntry.arguments?.getString("date")}")
+            Log.d("Calendar", "decoded date = $dateString")
+            Log.d("Calendar", "parsed initialDate = $initialDate")
 
             FullCalendarScreen(
                 onClose = { navController.popBackStack() },
