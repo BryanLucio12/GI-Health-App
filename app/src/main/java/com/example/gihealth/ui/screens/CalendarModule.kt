@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -66,7 +67,7 @@ data class FoodDay(
 @Composable
 fun MoodCalendarWidget(
     vm: CalendarViewModel,
-    onOpen: () -> Unit
+    onOpen: (LocalDate) -> Unit
 ) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val today = LocalDate.now()
@@ -74,7 +75,7 @@ fun MoodCalendarWidget(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onOpen() },
+            .clickable { onOpen(today) },
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
@@ -154,7 +155,7 @@ fun MoodCalendarWidget(
                                 DayCell(
                                     date = date,
                                     isSelected = date == today,
-                                    onClick = { onOpen() },
+                                    onClick = { onOpen(date) },
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(vertical = 2.dp)
@@ -176,17 +177,28 @@ fun MoodCalendarWidget(
 fun FullCalendarScreen(
     onClose: () -> Unit,
     vm: CalendarViewModel,
+    initialDate: LocalDate? = null,
     // You can plug your real data here later:
     getFoodForDate: (LocalDate) -> FoodDay? = { null },
     getJournalForDate: (LocalDate) -> String? = { null },
     getSymptomsForDate: (LocalDate) -> String? = { null }
 ) {
-    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    val startDate = initialDate ?: LocalDate.now()
+
+
+    var currentMonth by remember(startDate) {
+        mutableStateOf(YearMonth.from(startDate))
+    }
+
+    var selectedDate by remember(startDate) {
+        mutableStateOf(startDate)
+    }
 
     val today = LocalDate.now()
     val headerFormatter =
         DateTimeFormatter.ofPattern("EEEE, MMM d", Locale.getDefault())
+
+    //Log.d("Calendar", "initialDate = $initialDate")
 
     Scaffold(
         topBar = {

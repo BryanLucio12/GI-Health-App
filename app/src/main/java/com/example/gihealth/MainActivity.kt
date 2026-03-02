@@ -52,6 +52,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import java.time.LocalDate
+import java.util.Locale
+import android.util.Log
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+import java.net.URLEncoder
+
 
 
 
@@ -376,9 +385,25 @@ fun NavHostContainer(
             LogWeightScreen(navController)
         }
 
+        composable("foodHistory") {
+            FoodHistoryScreen(navController)
+        }
+
+        composable("symptomHistory") {
+            SymptomHistoryScreen(navController)
+        }
+
         composable("analytics") {
             AnalyticsScreen(
-                onOpenCalendar = { navController.navigate("calendar") },
+                //onOpenCalendar = { navController.navigate("calendar") },
+                onOpenCalendar = { selectedDate ->
+                    // encode the date for safe navigation
+                    val encoded = URLEncoder.encode(
+                        selectedDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
+                        StandardCharsets.UTF_8.toString()
+                    )
+                    navController.navigate("calendar?date=$encoded")
+                },
                 vm = vm,
                 onGeneratePdf = {
                     navController.navigate("pdf_questionnaire")
@@ -393,7 +418,16 @@ fun NavHostContainer(
             )
         }
 
-        composable("calendar") {
+        composable(
+            "calendar?date={date}",
+            arguments = listOf(
+                navArgument("date") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry->
 
             // Food dates (from LogFoodScreen) use "MMM d, yyyy" like "Feb 27, 2025"
             val foodDateFormatter = remember {
@@ -408,9 +442,24 @@ fun NavHostContainer(
             val journalEntries by journalViewModel.journalEntries.collectAsState()
             val symptoms by symptomViewModel.symptoms.collectAsState(initial = emptyList())
 
+            val dateString = backStackEntry.arguments?.getString("date")?.let {
+                URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
+            }
+            //Log.d("Calendar", "dateString from nav = $dateString")
+
+            val initialDate = dateString?.let {
+                try { LocalDate.parse(it, DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)) }
+                catch (e: Exception) { null }
+            }
+
+            Log.d("Calendar", "raw nav date = ${backStackEntry.arguments?.getString("date")}")
+            Log.d("Calendar", "decoded date = $dateString")
+            Log.d("Calendar", "parsed initialDate = $initialDate")
+
             FullCalendarScreen(
                 onClose = { navController.popBackStack() },
                 vm = vm,
+                initialDate = initialDate,
 
                 // FOOD for selected date
                 getFoodForDate = { date ->
