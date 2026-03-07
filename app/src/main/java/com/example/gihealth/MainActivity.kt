@@ -60,18 +60,44 @@ import android.util.Log
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.net.URLEncoder
+import android.content.Context
+import android.content.res.Configuration
+import kotlin.math.min
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.runtime.CompositionLocalProvider
 
+@Composable
+fun ClampedDensityProvider(
+    maxDensity: Float = 1.9f,        // cap the display size in settings
+    maxFontScale: Float = 1.00f,      // caps font size in settings
+    content: @Composable () -> Unit
+) {
+    val systemDensity = LocalDensity.current
 
+    val clampedDensity = Density(
+        density = min(systemDensity.density, maxDensity),
+        fontScale = min(systemDensity.fontScale, maxFontScale)
+    )
+
+    CompositionLocalProvider(LocalDensity provides clampedDensity) {
+        content()
+    }
+}
 
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        //clamp display and font
         setContent {
-            GIHealthTheme {
-                Surface(color = Color.White) {
-                    AppNavigator()
+            ClampedDensityProvider(maxDensity = 2.5f, maxFontScale = 1.2f) {
+                GIHealthTheme {
+                    Surface(color = Color.White) {
+                        AppNavigator()
+                    }
                 }
             }
         }

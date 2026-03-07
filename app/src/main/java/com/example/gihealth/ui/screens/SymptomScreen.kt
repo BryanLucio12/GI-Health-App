@@ -115,7 +115,7 @@ fun SymptomScreen(
             ) {
                 Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
                 Spacer(Modifier.width(6.dp))
-                Text("Search Recent Symptom", color = Color.White, fontSize = 16.sp)
+                Text("Recent Symptom", color = Color.White, fontSize = 16.sp)
             }
 
             Spacer(Modifier.height(8.dp))

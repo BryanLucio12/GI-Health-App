@@ -15,7 +15,7 @@ object Constants {
         ),
         // Symptoms screen
         BottomNavItem(
-            label = "Symptoms",
+            label = "Symptom",
             icon = Icons.Filled.Sick,
             route = "symptoms"
         ),
