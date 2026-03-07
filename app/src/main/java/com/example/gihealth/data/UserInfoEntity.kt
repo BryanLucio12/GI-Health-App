@@ -17,6 +17,6 @@ data class UserInfoEntity(
     val gender: String,
     val disease: String,
     val triggers: String,
-    val pin: Int,
+    val pin: String,
     val dob: String
 )

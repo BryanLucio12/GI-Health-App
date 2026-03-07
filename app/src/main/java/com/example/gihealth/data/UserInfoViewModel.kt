@@ -61,7 +61,7 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
                 gender = gender,
                 disease = disease,
                 triggers = triggers,
-                pin = currentInfo?.pin ?: 0 ,// save pin if set
+                pin = currentInfo?.pin ?: "",// save pin if set
                 dob = dob
             )
             userInfoDao.insert(updatedInfo)
@@ -73,7 +73,7 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
 
 
     // saving pin from create pin screen
-    fun saveUserPin(pin: Int) {
+    fun saveUserPin(pin: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentInfo = userInfoDao.getUserInfo()
             val updatedInfo = currentInfo?.copy(pin = pin)
@@ -97,7 +97,7 @@ class UserInfoViewModel(application: Application) : AndroidViewModel(application
 
 
     // verify pin
-    fun verifyPin(enteredPin: Int): Boolean {
+    fun verifyPin(enteredPin: String): Boolean {
         return _userInfo.value?.pin == enteredPin
     }
 }

@@ -134,11 +134,11 @@ fun AppNavigator() {
         return
     }
     // if pin already created
-    val hasPin = userInfo?.pin?.let { it != 0 } ?: false
+    val hasPin =  userInfo?.pin?.isNotEmpty() == true
     // if user has already completed setup name required
     val hasSetupCompleted = userInfo?.name?.isNotBlank() == true
     // determine the first screen shown based on pin and setup status
-    val savedPin = userInfo?.pin?.toString() ?: ""
+    val savedPin = userInfo?.pin ?: ""
     val startDestination = when {
         !hasPin -> "create_pin?reset=false"
         !hasSetupCompleted -> "user_setup"
@@ -217,7 +217,7 @@ fun AppNavigator() {
             ForgotPinScreen(
                 onNewPinSaved = { newPin ->
                     // Reuse existing saveUserPin function
-                    userInfoViewModel.saveUserPin(newPin.toInt())
+                    userInfoViewModel.saveUserPin(newPin)
 
                     // Navigate back to Enter PIN
                     navController.navigate("enter_pin") {

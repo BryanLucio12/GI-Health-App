@@ -132,7 +132,7 @@ fun CreatePinScreen(navController: NavController, onPinCreated: () -> Unit) {
                         else -> {
                             //No error message and goes to next part of app
                             errorMessage = ""
-                            userInfoViewModel.saveUserPin(pin.toInt())
+                            userInfoViewModel.saveUserPin(pin)
                             navController.navigate("enter_pin")
                             onPinCreated()
                         }
