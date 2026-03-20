@@ -35,6 +35,15 @@ import kotlin.math.roundToInt
 import com.example.gihealth.data.TopSymptomResults
 import com.example.gihealth.data.SymptomWithTrend
 import com.example.gihealth.ui.viewmodel.ReportViewModel
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.items
+import com.example.gihealth.data.FoodDatabase
+import com.example.gihealth.data.FoodEntity
+import com.example.gihealth.data.SymptomViewModel
+import com.example.gihealth.utils.TrendsAnalyzer
+import com.example.gihealth.utils.RecentTrendsSummary
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,8 +81,25 @@ fun AnalyticsScreen(
     var expanded by remember { mutableStateOf(false) }
     var typeOfRange by remember { mutableStateOf("This Week") }
 
+    val allFoods by produceState<List<FoodEntity>>(initialValue = emptyList(), typeOfRange) {
+        value = FoodDatabase.getDatabase(context.applicationContext as Application)
+            .foodDao()
+            .getAllFoods()
+    }
+
     val symptoms by symptomViewModel.symptoms.collectAsState()
     val wellBeingEntries by wellBeingViewModel.entries.observeAsState(emptyList())
+
+    var showTrendsDetails by remember { mutableStateOf(false) }
+
+    val trendsSummary = remember(typeOfRange, symptoms, wellBeingEntries, allFoods) {
+        TrendsAnalyzer.buildSummary(
+            range = typeOfRange,
+            symptoms = symptoms,
+            entries = wellBeingEntries,
+            foods = allFoods
+        )
+    }
 
     val overviewOptions = listOf("Today", "Yesterday", "This Week", "Last Week", "This Month")
 
@@ -157,11 +183,19 @@ fun AnalyticsScreen(
 
         item { TopSymptomsCard(topSymptoms = computeTopSymptomsWithTrend(symptoms, typeOfRange)) }
 
-        item { RecentTrendsCard(range = typeOfRange, symptoms = symptoms, entries = wellBeingEntries) }
+        item { RecentTrendsCard(summary = trendsSummary, onClick = { showTrendsDetails = true }) }
 
         item { MoodCalendarWidget(vm = vm, onOpen = onOpenCalendar) }
 
         item { Spacer(Modifier.height(24.dp)) }
+    }
+
+    if (showTrendsDetails) {
+        RecentTrendsDetailsScreen(
+            range = typeOfRange,
+            summary = trendsSummary,
+            onClose = { showTrendsDetails = false }
+        )
     }
 }
 
@@ -1011,32 +1045,14 @@ fun WeightGraph(data: Map<LocalDate, Int>, typeOfRange: String) {
     }
 }
 
-private data class RecentTrendsResult(
-    val bullets: List<String>,
-    val improved: Int,
-    val stable: Int,
-    val worse: Int
-)
 
 @Composable
 fun RecentTrendsCard(
-    range: String,
-    symptoms: List<SymptomEntity>,
-    entries: List<WellBeingEntity>
+    summary: RecentTrendsSummary,
+    onClick: () -> Unit
 ) {
-    // Previous range
-    val prevRange = when (range) {
-        "Today" -> "Yesterday"
-        "This Week" -> "Last Week"
-        else -> null   // no Last Month needed
-    }
-
-    val trends = remember(range, symptoms, entries) {
-        buildRecentTrends(range, prevRange, symptoms, entries)
-    }
-
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -1045,113 +1061,174 @@ fun RecentTrendsCard(
             Text("Recent Trends:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
 
-            if (trends.bullets.isEmpty()) {
-                Text("• Not enough data to generate trends for this range.")
-            } else {
-                trends.bullets.take(3).forEach { Text("• $it") }
+            summary.quickBullets.take(3).forEach {
+                Text("• $it", fontSize = 14.sp)
+                Spacer(Modifier.height(4.dp))
             }
 
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${trends.improved} Improved", color = Color(0xFF388E3C), fontWeight = FontWeight.Bold)
-                Text(" | ${trends.stable} Stable | ")
-                Text("${trends.worse} Higher", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                Text(
+                    "${summary.improved} Positive",
+                    color = Color(0xFF388E3C),
+                    fontWeight = FontWeight.Bold
+                )
+                Text(" | ${summary.stable} Neutral | ")
+                Text(
+                    "${summary.worse} Negative",
+                    color = Color(0xFFD32F2F),
+                    fontWeight = FontWeight.Bold
+                )
             }
+
+            Spacer(Modifier.height(6.dp))
+
+            Text(
+                text = "Based on recent patterns across stress, sleep, food, and digestion.",
+                color = Color.Gray,
+                fontSize = 12.sp
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            Text(
+                text = "Tap to view details",
+                color = Color(0xFF0F9D58),
+                fontWeight = FontWeight.Medium,
+                fontSize = 13.sp
+            )
         }
     }
 }
 
-private fun buildRecentTrends(
+@Composable
+fun RecentTrendsDetailsScreen(
     range: String,
-    prevRange: String?,
-    symptoms: List<SymptomEntity>,
-    entries: List<WellBeingEntity>
-): RecentTrendsResult {
+    summary: RecentTrendsSummary,
+    onClose: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClose) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close"
+                    )
+                }
 
-    val bullets = mutableListOf<String>()
-    var improved = 0
-    var stable = 0
-    var worse = 0
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Recent Trends",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(modifier = Modifier.width(48.dp))
+            }
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Trend Summary",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
 
-    fun scoreDelta(delta: Double, betterWhenHigher: Boolean, label: String, compareLabel: String) {
-        val threshold = 0.5
-        val isImproved = if (betterWhenHigher) delta > threshold else delta < -threshold
-        val isWorse = if (betterWhenHigher) delta < -threshold else delta > threshold
+                        Spacer(Modifier.height(8.dp))
 
-        when {
-            isImproved -> { improved++; bullets += "$label improved compared to $compareLabel." }
-            isWorse -> { worse++; bullets += "$label increased compared to $compareLabel." }
-            else -> { stable++; bullets += "$label stayed stable compared to $compareLabel." }
+                        Text(
+                            text = "Range: $range",
+                            color = Color.DarkGray,
+                            fontSize = 14.sp
+                        )
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${summary.improved} Positive",
+                                color = Color(0xFF388E3C),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(" | ${summary.stable} Neutral | ")
+                            Text(
+                                "${summary.worse} Negative",
+                                color = Color(0xFFD32F2F),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+
+                        Text(
+                            text = "These signals reflect recent relationships across stress, sleep, food, and digestion.",
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Quick Summary", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        summary.quickBullets.forEach {
+                            Text("• $it")
+                            Spacer(Modifier.height(4.dp))
+                        }
+                    }
+                }
+            }
+
+            items(summary.sections) { section ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(
+                            text = section.title,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(6.dp))
+
+                        section.items.forEach { item ->
+                            Text("• $item")
+                            Spacer(Modifier.height(4.dp))
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(20.dp)) }
         }
     }
-
-    // Digestive comfort
-    val comfortNow = computeDigestiveComfortForRange(symptoms, range).values.map { it.toDouble() }.averageOrNull()
-    val comfortPrev = prevRange?.let { computeDigestiveComfortForRange(symptoms, it).values.map { v -> v.toDouble() }.averageOrNull() }
-
-    if (comfortNow != null && comfortPrev != null) {
-        scoreDelta(comfortNow - comfortPrev, betterWhenHigher = true, label = "Digestive comfort", compareLabel = prevRange)
-    } else if (comfortNow != null) {
-        bullets += "Digestive comfort average: ${comfortNow.roundToInt()}/10."
-        stable++
-    }
-
-    // Weight
-    val weightNow = averageDailyLatest(entries, range) { it.weight.toDouble() }
-    val weightPrev = prevRange?.let { averageDailyLatest(entries, it) { e -> e.weight.toDouble() } }
-
-    if (weightNow != null && weightPrev != null) {
-        val delta = weightNow - weightPrev
-        val threshold = 0.5
-        when {
-            delta > threshold -> { worse++; bullets += "Average weight increased compared to $prevRange." }
-            delta < -threshold -> { improved++; bullets += "Average weight decreased compared to $prevRange." }
-            else -> { stable++; bullets += "Weight remained stable compared to $prevRange." }
-        }
-    } else if (weightNow != null) {
-        bullets += "Average weight logged: ${weightNow.roundToInt()}."
-        stable++
-    }
-
-    // Stress
-    val stressNow = averageDailyLatest(entries, range) { it.stressRating.toDouble() }
-    val stressPrev = prevRange?.let { averageDailyLatest(entries, it) { e -> e.stressRating.toDouble() } }
-
-    if (stressNow != null && stressPrev != null) {
-        scoreDelta(stressNow - stressPrev, betterWhenHigher = false, label = "Stress level", compareLabel = prevRange)
-    } else if (stressNow != null) {
-        bullets += "Average stress rating: ${stressNow.roundToInt()}/10."
-        stable++
-    }
-
-    // Sleep
-    val sleepNow = averageDailyLatest(entries, range) { it.sleepRating.toDouble() }
-    val sleepPrev = prevRange?.let { averageDailyLatest(entries, it) { e -> e.sleepRating.toDouble() } }
-
-    if (sleepNow != null && sleepPrev != null) {
-        scoreDelta(sleepNow - sleepPrev, betterWhenHigher = true, label = "Sleep quality", compareLabel = prevRange)
-    } else if (sleepNow != null) {
-        bullets += "Average sleep rating: ${sleepNow.roundToInt()}/10."
-        stable++
-    }
-
-    // Top symptom trend
-    val top = computeTopSymptomsWithTrend(symptoms, range).firstOrNull()
-    if (top != null) {
-        val msg = when (top.trend) {
-            "↑" -> { worse++; "${top.name} severity increased in this period." }
-            "↓" -> { improved++; "${top.name} severity decreased in this period." }
-            else -> { stable++; "${top.name} severity stayed stable in this period." }
-        }
-        bullets += msg
-    }
-
-    return RecentTrendsResult(
-        bullets = bullets.distinct(),
-        improved = improved,
-        stable = stable,
-        worse = worse
-    )
 }
 
 private fun averageDailyLatest(
