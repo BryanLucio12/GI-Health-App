@@ -69,8 +69,6 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
-
-
-
+    implementation(libs.androidx.work.runtime.ktx)
 
 }

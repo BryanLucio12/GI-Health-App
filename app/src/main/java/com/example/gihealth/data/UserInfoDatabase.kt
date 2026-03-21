@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 //connecting Entity to the Dao
 
-@Database(entities = [UserInfoEntity::class], version = 3)
+@Database(entities = [UserInfoEntity::class], version = 4)
 abstract class UserInfoDatabase : RoomDatabase() {
 
     abstract fun UserInfoDao(): UserInfoDao
