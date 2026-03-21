@@ -44,7 +44,8 @@ import com.example.gihealth.utils.TrendsAnalyzer
 import com.example.gihealth.utils.RecentTrendsSummary
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.TabRowDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -174,14 +175,19 @@ fun AnalyticsScreen(
             }
         }
 
-        item { DigestiveComfortCard(typeOfRange = typeOfRange, symptoms = symptoms) }
+        item {
+            AnalyticsGraphsSwitcher(
+                typeOfRange = typeOfRange,
+                symptoms = symptoms,
+                wellBeingEntries = wellBeingEntries
+            )
+        }
 
-        // UPDATED: pass real WellBeing entries to the weight tracker
-        item { WeightTrackerCard(typeOfRange = typeOfRange, entries = wellBeingEntries) }
-
-        item { SeverityOverTimeCard(symptoms = symptoms, range = typeOfRange) }
-
-        item { TopSymptomsCard(topSymptoms = computeTopSymptomsWithTrend(symptoms, typeOfRange)) }
+        item {
+            TopSymptomsCard(
+                topSymptoms = computeTopSymptomsWithTrend(symptoms, typeOfRange)
+            )
+        }
 
         item { RecentTrendsCard(summary = trendsSummary, onClick = { showTrendsDetails = true }) }
 
@@ -196,6 +202,84 @@ fun AnalyticsScreen(
             summary = trendsSummary,
             onClose = { showTrendsDetails = false }
         )
+    }
+}
+
+@Composable
+fun AnalyticsGraphsSwitcher(
+    typeOfRange: String,
+    symptoms: List<SymptomEntity>,
+    wellBeingEntries: List<WellBeingEntity>
+) {
+    val tabs = listOf(
+        "Comfort",
+        "Weight",
+        "Severity"
+    )
+
+    var selectedTab by remember { mutableStateOf(0) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = Color.White,
+                contentColor = Color(0xFF0F9D58),
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                        color = Color(0xFF0F9D58)
+                    )
+                }
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = {
+                            Text(
+                                text = title,
+                                color = Color.Black,
+                                        fontWeight = if (selectedTab == index)
+                                    FontWeight.Bold
+                                else
+                                    FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            when (selectedTab) {
+                0 -> {
+                    DigestiveComfortCard(
+                        typeOfRange = typeOfRange,
+                        symptoms = symptoms
+                    )
+                }
+                1 -> {
+                    WeightTrackerCard(
+                        typeOfRange = typeOfRange,
+                        entries = wellBeingEntries
+                    )
+                }
+                2 -> {
+                    SeverityOverTimeCard(
+                        symptoms = symptoms,
+                        range = typeOfRange
+                    )
+                }
+            }
+        }
     }
 }
 
