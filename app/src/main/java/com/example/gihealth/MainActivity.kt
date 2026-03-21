@@ -339,13 +339,8 @@ fun NavHostContainer(
     )
 
     // ALL foods for calendar (we load them directly from DB)
-    var allFoods by remember { mutableStateOf<List<FoodEntity>>(emptyList()) }
+    val allFoods by foodVm.allFoods.observeAsState(emptyList())
 
-    // Any time today's list changes (user logs something), re-query all foods
-    LaunchedEffect(todayFoods) {
-        val db = FoodDatabase.getDatabase(context)
-        allFoods = db.foodDao().getAllFoods()
-    }
 
     NavHost(
         navController = navController,

@@ -1,4 +1,3 @@
-// FoodDao.kt
 package com.example.gihealth.data
 
 import androidx.room.Dao
@@ -23,6 +22,16 @@ interface FoodDao {
 
     @Query("SELECT DISTINCT name FROM food_table ORDER BY name ASC")
     suspend fun getDistinctFoodNames(): List<String>
+
+    @Query("""
+        SELECT name
+        FROM food_table
+        WHERE name LIKE '%' || :query || '%' COLLATE NOCASE
+        GROUP BY name
+        ORDER BY MAX(id) DESC
+        LIMIT 8
+    """)
+    suspend fun searchLoggedFoodNames(query: String): List<String>
 
     @Delete
     suspend fun delete(food: FoodEntity)
