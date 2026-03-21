@@ -24,6 +24,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.gihealth.ui.onboarding.AboutScreen
 import com.example.gihealth.ui.onboarding.CreatePinScreen
 import com.example.gihealth.ui.onboarding.EnterPinScreen
 import com.example.gihealth.ui.onboarding.ForgotPinScreen
@@ -66,6 +67,8 @@ import kotlin.math.min
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.runtime.CompositionLocalProvider
+import android.content.pm.ActivityInfo
+import android.content.SharedPreferences
 
 @Composable
 fun ClampedDensityProvider(
@@ -93,6 +96,40 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         //clamp display and font
         setContent {
+            val context = LocalContext.current
+            val sharedPreferences = remember {
+                context.getSharedPreferences("gi_health_settings", Context.MODE_PRIVATE)
+            }
+            
+            var lockRotationEnabled by remember {
+                mutableStateOf(sharedPreferences.getBoolean("lock_rotation_enabled", false))
+            }
+
+            // Keep a strong reference to the listener to prevent garbage collection
+            val listener = remember {
+                SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+                    if (key == "lock_rotation_enabled") {
+                        lockRotationEnabled = prefs.getBoolean(key, false)
+                    }
+                }
+            }
+
+            DisposableEffect(sharedPreferences) {
+                sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
+                onDispose {
+                    sharedPreferences.unregisterOnSharedPreferenceChangeListener(listener)
+                }
+            }
+            
+            // Handle Rotation Lock
+            LaunchedEffect(lockRotationEnabled) {
+                requestedOrientation = if (lockRotationEnabled) {
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                } else {
+                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
+            }
+
             ClampedDensityProvider(maxDensity = 2.5f, maxFontScale = 1.2f) {
                 GIHealthTheme {
                     Surface(color = Color.White) {
@@ -156,7 +193,7 @@ fun AppNavigator() {
                 onPinCreated = {
                     if (reset) {
                         // reset the pin
-                        navController.navigate("enter_pin") {
+                        navController.navigate("main_app") {
                             popUpTo("create_pin") { inclusive = true }
                         }
                     } else {
@@ -173,8 +210,14 @@ fun AppNavigator() {
             QuestionnaireScreen(
                 navController = navController,
                 onComplete = {
-                    navController.navigate("user_setup") {
-                        popUpTo("questionnaire") { inclusive = true }
+                    if (hasSetupCompleted) {
+                         navController.navigate("main_app") {
+                            popUpTo("questionnaire") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("user_setup") {
+                            popUpTo("questionnaire") { inclusive = true }
+                        }
                     }
                 }
             )
@@ -240,13 +283,13 @@ fun AppNavigator() {
 
         // ➡️ Main App
         composable("main_app") {
-            MainNavHost()
+            MainNavHost(rootNavController = navController)
         }
     }
 }
 
 @Composable
-fun MainNavHost() {
+fun MainNavHost(rootNavController: NavHostController) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -259,6 +302,7 @@ fun MainNavHost() {
     ) { padding ->
         NavHostContainer(
             navController = navController,
+            rootNavController = rootNavController,
             padding = padding
         )
     }
@@ -320,6 +364,7 @@ fun ProfileTopBar(navController: NavController) {
 @Composable
 fun NavHostContainer(
     navController: NavHostController,
+    rootNavController: NavHostController,
     padding: PaddingValues
 ) {
     val context = LocalContext.current
@@ -539,7 +584,11 @@ fun NavHostContainer(
         }
 
         composable("settings") {
-            SettingsScreen(navController)
+            SettingsScreen(navController = navController, rootNavController = rootNavController)
+        }
+
+        composable("about") {
+            AboutScreen(navController = navController)
         }
     }
 }
