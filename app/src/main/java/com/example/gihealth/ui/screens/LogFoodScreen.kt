@@ -10,7 +10,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
@@ -18,8 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.gihealth.ui.viewmodel.FoodViewModel
 import java.time.LocalDate
@@ -27,7 +24,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.foundation.lazy.rememberLazyListState
-
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun LogFoodScreen(
@@ -37,10 +34,6 @@ fun LogFoodScreen(
 ) {
     var food by remember { mutableStateOf("") }
     var meal by remember { mutableStateOf("Lunch") }
-
-    var ingredientsList by remember { mutableStateOf<List<String>>(emptyList()) }
-    var newIngredientText by remember { mutableStateOf("") }
-    var selectedIngredientForDialog by remember { mutableStateOf<String?>(null) }
 
     val searchResults by foodViewModel.searchResults.collectAsState()
 
@@ -85,8 +78,6 @@ fun LogFoodScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            //Date
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -113,19 +104,16 @@ fun LogFoodScreen(
                 }
             }
 
-            //Food
-
             OutlinedTextField(
                 value = food,
                 onValueChange = {
                     food = it
-                    ingredientsList = emptyList()
-                    newIngredientText = ""
-                    foodViewModel.searchFoods(it)
+                    foodViewModel.searchLoggedFoods(it)
                 },
                 label = { Text("What did you eat?") },
                 placeholder = { Text("e.g., Turkey sandwich") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
             if (food.isNotBlank() && searchResults.isNotEmpty()) {
@@ -136,17 +124,12 @@ fun LogFoodScreen(
                     Column {
                         searchResults.forEach { item ->
                             Text(
-                                text = item.name,
+                                text = item,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        food = item.name
-                                        ingredientsList = item.ingredients
-                                            .split(',', ';', '\n')
-                                            .map { it.trim() }
-                                            .filter { it.isNotEmpty() }
-                                        newIngredientText = ""
-                                        foodViewModel.searchFoods("")
+                                        food = item
+                                        foodViewModel.clearSearchResults()
                                     }
                                     .padding(12.dp)
                             )
@@ -154,8 +137,6 @@ fun LogFoodScreen(
                     }
                 }
             }
-
-            // Time and Meal
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -225,74 +206,29 @@ fun LogFoodScreen(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Ingredients", fontWeight = FontWeight.SemiBold)
-
-                ingredientsList.forEachIndexed { index, ingredient ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            ingredient,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { selectedIngredientForDialog = ingredient }
-                        )
-                        IconButton(onClick = {
-                            ingredientsList =
-                                ingredientsList.toMutableList().also { it.removeAt(index) }
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Remove")
-                        }
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = newIngredientText,
-                        onValueChange = { newIngredientText = it },
-                        label = { Text("Add ingredient") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    Button(
-                        onClick = {
-                            ingredientsList = ingredientsList + newIngredientText.trim()
-                            newIngredientText = ""
-                        },
-                        enabled = newIngredientText.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0F9D58),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text("Add")
-                    }
-                }
-            }
-
             Spacer(Modifier.weight(1f))
 
             Button(
                 onClick = {
                     onSave?.invoke(
-                        food,
+                        food.trim(),
                         selectedTime.format(timeFormatter),
                         meal,
-                        ingredientsList.joinToString(", "),
+                        "",
                         selectedDate.format(dateFormatter)
                     )
+                    foodViewModel.clearSearchResults()
                 },
                 enabled = food.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF0F9D58),
-                contentColor = Color.White
-            )
+                    contentColor = Color.White
+                )
             ) {
                 Text("Save Log")
             }
         }
-
     }
 
     if (showTimePicker) {
@@ -303,19 +239,6 @@ fun LogFoodScreen(
                 selectedTime = it
                 showTimePicker = false
             }
-        )
-    }
-
-    if (selectedIngredientForDialog != null) {
-        AlertDialog(
-            onDismissRequest = { selectedIngredientForDialog = null },
-            confirmButton = {
-                TextButton(onClick = { selectedIngredientForDialog = null }) {
-                    Text("Close")
-                }
-            },
-            title = { Text("Ingredient") },
-            text = { Text(selectedIngredientForDialog!!) }
         )
     }
 }
@@ -338,7 +261,6 @@ fun TimePickerDropdownDialog(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Hour column
                 TimeColumn(
                     items = (1..12).toList(),
                     selected = hour,
@@ -346,7 +268,6 @@ fun TimePickerDropdownDialog(
                     startAtFirstItem = true
                 )
 
-                // Minute column
                 TimeColumn(
                     items = (0..59).toList(),
                     selected = minute,
@@ -355,7 +276,6 @@ fun TimePickerDropdownDialog(
                     startAtFirstItem = true
                 )
 
-                // AM/PM column
                 Column(
                     modifier = Modifier
                         .height(140.dp)
@@ -370,22 +290,28 @@ fun TimePickerDropdownDialog(
                                 .clickable { isAm = period == "AM" }
                                 .padding(vertical = 8.dp),
                             textAlign = TextAlign.Center,
-                            fontWeight = if ((isAm && period == "AM") || (!isAm && period == "PM")) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if ((isAm && period == "AM") || (!isAm && period == "PM")) {
+                                FontWeight.Bold
+                            } else {
+                                FontWeight.Normal
+                            }
                         )
                     }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                val h24 = when {
-                    isAm && hour == 12 -> 0
-                    !isAm && hour == 12 -> 12
-                    !isAm -> hour + 12
-                    else -> hour
-                }
-                onConfirm(LocalTime.of(h24, minute))
-            }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58))
+            Button(
+                onClick = {
+                    val h24 = when {
+                        isAm && hour == 12 -> 0
+                        !isAm && hour == 12 -> 12
+                        !isAm -> hour + 12
+                        else -> hour
+                    }
+                    onConfirm(LocalTime.of(h24, minute))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F9D58))
             ) {
                 Text("Confirm")
             }
