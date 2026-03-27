@@ -8,12 +8,10 @@ import java.io.File
 import java.io.FileOutputStream
 import com.example.gihealth.models.PdfQuestionnaireAnswers
 import com.example.gihealth.data.*
-import kotlin.math.roundToInt
 //import com.example.gihealth.utils.ReportBuilder
 import android.content.ContentValues
 import android.os.Environment
 import android.provider.MediaStore
-import java.io.OutputStream
 
 
 // import used to make answers
@@ -524,46 +522,6 @@ fun generatePdfReport(
              }
          }
      }
-
-     // Hepatitis Screening
-     answers.hxHepB?.takeIf { it == 1 }?.let {
-         ALLIANCE_HEP_SCREENING_POSITIONS["hx_hep_b"]?.let { (x, y) ->
-             canvas3.drawText("✔", x, y, paint)
-         }
-     }
-
-     answers.hepBVaccinated?.takeIf { it == 1 }?.let {
-         ALLIANCE_HEP_SCREENING_POSITIONS["hep_b_vax"]?.let { (x, y) ->
-             canvas3.drawText("✔", x, y, paint)
-         }
-     }
-
-     answers.hepBPositiveTest?.takeIf { it == 1 }?.let {
-         ALLIANCE_HEP_SCREENING_POSITIONS["hep_b_positive"]?.let { (x, y) ->
-             canvas3.drawText("✔", x, y, paint)
-         }
-     }
-
-     answers.illicitDrugUse?.takeIf { it == 1 }?.let {
-         ALLIANCE_HEP_SCREENING_POSITIONS["illicit_drugs"]?.let { (x, y) ->
-             canvas3.drawText("✔", x, y, paint)
-         }
-     }
-
-     fun drawTB(key: String, checked: Int?) {
-         if (checked == 1) {
-             ALLIANCE_TB_POSITIONS[key]?.let { (x, y) ->
-                 canvas3.drawText("✔", x, y, paint)
-             }
-         }
-     }
-
-     drawTB("positiveTbTest", answers.positiveTbTest)
-     drawTB("hxTbDisease", answers.hxTbDisease)
-     drawTB("treatedActiveOrLatentTb", answers.treatedActiveOrLatentTb)
-     drawTB("traveledOutsideRecently", answers.traveledOutsideRecently)
-     drawTB("liveVaccinationsRecently", answers.liveVaccinationsRecently)
-     drawTB("healthcareHighRiskWorker", answers.healthcareHighRiskWorker)
 
      answers.rectalBleedingWeek?.let { value ->
          ALLIANCE_RECTAL_BLEEDING_WEEK_POSITIONS[value]?.let { (x, y) ->
@@ -1109,21 +1067,6 @@ private val ALLIANCE_COMPLICATION_POSITIONS = mapOf(
     "Abscess" to Pair(267f, 1632f)
 )
 
-private val ALLIANCE_HEP_SCREENING_POSITIONS = mapOf(
-    "hx_hep_b" to Pair(267f, 1742f),
-    "hep_b_vax" to Pair(267f, 1786f),
-    "hep_b_positive" to Pair(267f, 1830f),
-    "illicit_drugs" to Pair(267f, 1874f)
-)
-
-private val ALLIANCE_TB_POSITIONS = mapOf(
-    "positiveTbTest" to Pair(954f, 1280f),
-    "hxTbDisease" to Pair(954f, 1324f),
-    "treatedActiveOrLatentTb" to Pair(954f, 1368f),
-    "traveledOutsideRecently" to Pair(954f, 1412f),
-    "liveVaccinationsRecently" to Pair(954f, 1491f),
-    "healthcareHighRiskWorker" to Pair(954f, 1535f)
-)
 
 private val ALLIANCE_RECTAL_BLEEDING_WEEK_POSITIONS = mapOf(
     0 to Pair(954f, 1035f),

@@ -66,10 +66,7 @@ fun UserPDFQuestionnaire(
 
                 question10a = null,
 
-                hxHepB = null,
-                hepBVaccinated = null,
-                hepBPositiveTest = null,
-                illicitDrugUse = null,
+
                 rectalBleedingWeek = null,
                 rectalBleedingToday = null
             )
@@ -358,65 +355,6 @@ fun UserPDFQuestionnaire(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Hepatitis Screening (Check all that apply)",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        EmotionCheckbox("Hx of Hep B?", answers.hxHepB) {
-            answers = answers.copy(hxHepB = it)
-        }
-
-        EmotionCheckbox("Have you received Hep B vaccination?", answers.hepBVaccinated) {
-            answers = answers.copy(hepBVaccinated = it)
-        }
-
-        EmotionCheckbox("Have you ever tested positive for Hep B?", answers.hepBPositiveTest) {
-            answers = answers.copy(hepBPositiveTest = it)
-        }
-
-        EmotionCheckbox("Have you ever used illicit drugs?", answers.illicitDrugUse) {
-            answers = answers.copy(illicitDrugUse = it)
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "TB Screening (Check all that apply)",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        EmotionCheckbox("Hx of positive TB test", answers.positiveTbTest) {
-            answers = answers.copy(positiveTbTest = it)
-        }
-
-        EmotionCheckbox("Hx of TB disease", answers.hxTbDisease) {
-            answers = answers.copy(hxTbDisease = it)
-        }
-
-        EmotionCheckbox("Ever treated for Active or Latent TB?", answers.treatedActiveOrLatentTb) {
-            answers = answers.copy(treatedActiveOrLatentTb = it)
-        }
-
-        EmotionCheckbox("Traveled outside the country recently?", answers.traveledOutsideRecently) {
-            answers = answers.copy(traveledOutsideRecently = it)
-        }
-
-        EmotionCheckbox("Received any live vaccinations recently?", answers.liveVaccinationsRecently) {
-            answers = answers.copy(liveVaccinationsRecently = it)
-        }
-
-        EmotionCheckbox(
-            "Healthcare worker or volunteer who works with high-risk groups?",
-            answers.healthcareHighRiskWorker
-        ) {
-            answers = answers.copy(healthcareHighRiskWorker = it)
-        }
 
 
         val symptomViewModel: SymptomViewModel = viewModel() // gets the ViewModel
