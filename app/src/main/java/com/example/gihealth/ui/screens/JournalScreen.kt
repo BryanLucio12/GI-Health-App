@@ -64,7 +64,7 @@ fun JournalScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = { selectedDate = selectedDate.minusDays(1) }) {
-                Text("<", style = MaterialTheme.typography.headlineSmall, color = Color.Gray)
+                Text("<", style = MaterialTheme.typography.headlineSmall, color = Color.Black, fontWeight = FontWeight.Bold)
             }
 
             Spacer(Modifier.width(6.dp))
@@ -73,14 +73,19 @@ fun JournalScreen(
                 text = if (selectedDate == LocalDate.now())
                     "Today (${selectedDate.format(dateFormatter)})"
                 else selectedDate.format(dateFormatter),
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Gray
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(Modifier.width(6.dp))
 
             TextButton(onClick = { selectedDate = selectedDate.plusDays(1) }) {
-                Text(">", style = MaterialTheme.typography.headlineSmall, color = Color.Gray)
+                Text(
+                    ">",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold)
             }
         }
 
