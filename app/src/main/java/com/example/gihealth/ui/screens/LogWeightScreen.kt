@@ -82,7 +82,7 @@ fun LogWeightScreen(navController: NavController) {
                     TextButton(onClick = {
                         selectedDate = selectedDate.minusDays(1)   // ◀ previous day
                     }) {
-                        Text("<", fontSize = 22.sp, color = Color.Gray)
+                        Text("<", style = MaterialTheme.typography.headlineSmall, color = Color.Black, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(Modifier.width(6.dp))
@@ -91,8 +91,9 @@ fun LogWeightScreen(navController: NavController) {
                         text = if (selectedDate == LocalDate.now())
                             "Today (${selectedDate.format(dateFormatter)})"
                         else selectedDate.format(dateFormatter),
-                        fontSize = 16.sp,
-                        color = Color.Gray
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(Modifier.width(6.dp))
@@ -100,7 +101,11 @@ fun LogWeightScreen(navController: NavController) {
                     TextButton(onClick = {
                         selectedDate = selectedDate.plusDays(1)    // ▶ next day
                     }) {
-                        Text(">", fontSize = 22.sp, color = Color.Gray)
+                        Text(
+                            ">",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold)
                     }
                 }
             }
