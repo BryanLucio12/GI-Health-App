@@ -46,6 +46,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.TabRowDefaults
+import com.example.gihealth.ui.viewmodel.BloodworkViewModel
+import com.example.gihealth.data.BloodworkEntity
+import androidx.compose.ui.text.style.TextAlign
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +82,13 @@ fun AnalyticsScreen(
             context.applicationContext as Application
         )
     )
+    val bloodworkViewModel: BloodworkViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory(
+            context.applicationContext as Application
+        )
+    )
+
+    val allBloodwork by bloodworkViewModel.allBloodwork.observeAsState(emptyList())
 
     var expanded by remember { mutableStateOf(false) }
     var typeOfRange by remember { mutableStateOf("This Week") }
@@ -182,6 +193,11 @@ fun AnalyticsScreen(
                 wellBeingEntries = wellBeingEntries
             )
         }
+        item {
+            BloodworkGraphsCard(
+                entries = allBloodwork
+            )
+        }
 
         item {
             TopSymptomsCard(
@@ -284,6 +300,282 @@ fun AnalyticsGraphsSwitcher(
 }
 
 @Composable
+fun BloodworkGraphsCard(
+    entries: List<BloodworkEntity>
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var selectedBloodworkTab by remember { mutableStateOf(0) }
+
+    val bloodworkDateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+
+    val recentEntries = remember(entries) {
+        entries
+            .sortedWith(
+                compareBy<BloodworkEntity> {
+                    LocalDate.parse(it.date, bloodworkDateFormatter)
+                }.thenBy { it.id }
+            )
+            .takeLast(7)
+    }
+
+    val b12Data = remember(recentEntries) {
+        recentEntries.mapIndexedNotNull { index, entry ->
+            entry.b12Level?.let { value ->
+                index to value
+            }
+        }
+    }
+
+    val crpData = remember(recentEntries) {
+        recentEntries.mapIndexedNotNull { index, entry ->
+            entry.crpLevel?.let { value ->
+                index to value
+            }
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                "Blood Work",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            if (entries.isEmpty()) {
+                Text(
+                    "No blood work entries logged yet.",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                return@Column
+            }
+
+            Button(
+                onClick = { expanded = !expanded },
+                modifier = Modifier.fillMaxWidth(0.7f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0F9D58)
+                )
+            ) {
+                Text(
+                    if (expanded) "Hide Blood Work Trends" else "Show Blood Work Trends",
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            if (expanded) {
+                Spacer(Modifier.height(16.dp))
+
+                val tabs = listOf("B12", "CRP")
+
+                TabRow(
+                    selectedTabIndex = selectedBloodworkTab,
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF0F9D58),
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedBloodworkTab]),
+                            color = Color(0xFF0F9D58)
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedBloodworkTab == index,
+                            onClick = { selectedBloodworkTab = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    color = Color.Black,
+                                    fontWeight = if (selectedBloodworkTab == index) {
+                                        FontWeight.Bold
+                                    } else {
+                                        FontWeight.Normal
+                                    }
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                when (selectedBloodworkTab) {
+                    0 -> {
+                        if (b12Data.isNotEmpty()) {
+                            Text(
+                                "B12 Levels",
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            BloodworkLineGraph(
+                                entries = recentEntries,
+                                points = b12Data
+                            )
+                        } else {
+                            Text(
+                                "No B12 values logged yet.",
+                                color = Color.DarkGray,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+
+                    1 -> {
+                        if (crpData.isNotEmpty()) {
+                            Text(
+                                "CRP Levels",
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            BloodworkLineGraph(
+                                entries = recentEntries,
+                                points = crpData
+                            )
+                        } else {
+                            Text(
+                                "No CRP values logged yet.",
+                                color = Color.DarkGray,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+@Composable
+fun BloodworkLineGraph(
+    entries: List<BloodworkEntity>,
+    points: List<Pair<Int, Double>>
+) {
+    val displayLabels = entries.map { entry ->
+        try {
+            val parsed = LocalDate.parse(
+                entry.date,
+                java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+            )
+            parsed.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + parsed.dayOfMonth
+        } catch (e: Exception) {
+            entry.date
+        }
+    }
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+    ) {
+        if (points.isEmpty()) return@Canvas
+
+        val values = points.map { it.second.toFloat() }
+        val minValue = values.minOrNull() ?: 0f
+        val maxValue = values.maxOrNull() ?: 10f
+
+        val paddingY = ((maxValue - minValue) * 0.15f).coerceAtLeast(1f)
+        val minY = (minValue - paddingY).coerceAtLeast(0f)
+        val maxY = maxValue + paddingY
+        val rangeY = (maxY - minY).coerceAtLeast(1f)
+
+        val chartWidth = size.width
+        val chartHeight = size.height * 0.82f
+        val spacingX = if (entries.size > 1) chartWidth / (entries.size - 1) else chartWidth / 2f
+
+        val steps = 5
+        for (i in 0..steps) {
+            val yValue = minY + i * (rangeY / steps)
+            val y = chartHeight - ((yValue - minY) / rangeY * chartHeight)
+
+            drawLine(
+                Color.LightGray.copy(alpha = 0.3f),
+                Offset(0f, y),
+                Offset(chartWidth, y),
+                1f
+            )
+
+            drawContext.canvas.nativeCanvas.drawText(
+                String.format("%.1f", yValue),
+                -45f,
+                y + 6f,
+                Paint().apply {
+                    color = android.graphics.Color.GRAY
+                    textSize = 24f
+                    textAlign = Paint.Align.LEFT
+                }
+            )
+        }
+
+        for (i in 1 until points.size) {
+            val (prevIndex, prevValue) = points[i - 1]
+            val (currIndex, currValue) = points[i]
+
+            val startX = if (entries.size > 1) prevIndex * spacingX else chartWidth / 2f
+            val endX = if (entries.size > 1) currIndex * spacingX else chartWidth / 2f
+
+            val startY = chartHeight - (((prevValue.toFloat() - minY) / rangeY) * chartHeight)
+            val endY = chartHeight - (((currValue.toFloat() - minY) / rangeY) * chartHeight)
+
+            drawLine(
+                Color(0xFF0F9D58),
+                Offset(startX, startY),
+                Offset(endX, endY),
+                5f,
+                StrokeCap.Round
+            )
+        }
+
+        points.forEach { (index, value) ->
+            val x = if (entries.size > 1) index * spacingX else chartWidth / 2f
+            val y = chartHeight - (((value.toFloat() - minY) / rangeY) * chartHeight)
+
+            drawCircle(
+                color = Color(0xFF0F9D58),
+                radius = 7f,
+                center = Offset(x, y)
+            )
+        }
+
+        displayLabels.forEachIndexed { i, label ->
+            val x = if (entries.size > 1) i * spacingX else chartWidth / 2f
+            drawContext.canvas.nativeCanvas.drawText(
+                label,
+                x,
+                size.height - 4f,
+                Paint().apply {
+                    color = android.graphics.Color.DKGRAY
+                    textSize = 22f
+                    textAlign = Paint.Align.CENTER
+                }
+            )
+        }
+    }
+}
+
+@Composable
 fun SeverityOverTimeCard(
     symptoms: List<SymptomEntity>,
     range: String
@@ -298,9 +590,19 @@ fun SeverityOverTimeCard(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
 
-            Text("Symptom Severity (1–10)", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(
+                "Symptom Severity (1-10)",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
             Spacer(modifier = Modifier.height(12.dp))
 
             if (symptoms.isEmpty()) {
@@ -548,7 +850,11 @@ fun TopSymptomsCard(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
 
             Text("Most Common Symptoms", fontWeight = FontWeight.Bold, fontSize = 18.sp)
 
@@ -715,10 +1021,17 @@ fun DigestiveComfortCard(typeOfRange: String, symptoms: List<SymptomEntity>) {
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Text("Digestive Comfort (1–10)", fontWeight = FontWeight.Bold)
+            Text(
+                "Digestive Comfort (1-10)",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
             Spacer(Modifier.height(8.dp))
 
             if (symptoms.isEmpty()) {
@@ -822,7 +1135,7 @@ fun DigestiveComfortGraph(
         val minY = 0f
         val rangeY = maxY - minY
         val chartWidth = size.width
-        val chartHeight = size.height * 0.85f
+        val chartHeight = size.height * 0.92f
         val spacingX = if (daysToShow.size > 1) chartWidth / (daysToShow.size - 1) else chartWidth
 
         // Horizontal grid lines
@@ -901,8 +1214,18 @@ fun WeightTrackerCard(typeOfRange: String, entries: List<WellBeingEntity>) {
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
-        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Weight Tracker (lbs)", fontWeight = FontWeight.Bold)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                "Weight Tracker (lbs)",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
             Spacer(Modifier.height(8.dp))
 
             if (entries.isEmpty()) {

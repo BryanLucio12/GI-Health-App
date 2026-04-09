@@ -451,6 +451,9 @@ fun NavHostContainer(
         composable("logWeight") {
             LogWeightScreen(navController)
         }
+        composable("logBloodWork") {
+            LogBloodWorkScreen(navController)
+        }
 
         composable("foodHistory") {
             FoodHistoryScreen(navController)

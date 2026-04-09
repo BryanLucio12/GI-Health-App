@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.MenuAnchorType
 import com.example.gihealth.data.WellBeingEntity
 import com.example.gihealth.data.WellBeingViewModel
+import androidx.compose.material.icons.filled.Add
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -226,6 +227,32 @@ fun LogWeightScreen(navController: NavController) {
                     onValueChange = { stressRating = it },
                     onNoteChange = { stressNote = it }
                 )
+            }
+
+            // NEW: Optional blood work button
+            item {
+                OutlinedButton(
+                    onClick = {
+                        navController.navigate("logBloodWork") },
+                        modifier = Modifier
+                        .fillMaxWidth()
+                            .padding(12.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = Color(0xFF0F9D58)
+                        )
+                    ){
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Blood Work"
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Add Blood Work (B12 / CRP)",
+                            fontWeight = FontWeight.SemiBold
+                        )
+                }
             }
 
             // Save
