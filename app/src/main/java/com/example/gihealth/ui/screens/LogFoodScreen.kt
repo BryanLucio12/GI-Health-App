@@ -25,17 +25,25 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.gihealth.data.FoodCategoryDefaults
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LogFoodScreen(
     foodViewModel: FoodViewModel,
-    onSave: ((food: String, time: String, meal: String, ingredients: String, date: String) -> Unit)? = null,
+    onSave: ((food: String, time: String, meal: String, ingredients: String, date: String, categories: String) -> Unit)? = null,
     onBackPressed: (() -> Unit)? = null
 ) {
     var food by remember { mutableStateOf("") }
     var meal by remember { mutableStateOf("Lunch") }
 
     val searchResults by foodViewModel.searchResults.collectAsState()
+    val selectedCategories by foodViewModel.selectedCategories.collectAsStateWithLifecycle()
 
     // Time
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
@@ -114,6 +122,9 @@ fun LogFoodScreen(
                 onValueChange = {
                     food = it
                     foodViewModel.searchLoggedFoods(it)
+                    if (it.isBlank()) {
+                        foodViewModel.clearSelectedCategories()
+                    }
                 },
                 label = { Text("What did you eat?") },
                 placeholder = { Text("e.g., Turkey sandwich") },
@@ -134,6 +145,7 @@ fun LogFoodScreen(
                                     .fillMaxWidth()
                                     .clickable {
                                         food = item
+                                        foodViewModel.setSuggestedCategories(item)
                                         foodViewModel.clearSearchResults()
                                     }
                                     .padding(12.dp)
@@ -211,18 +223,43 @@ fun LogFoodScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Categories",
+                fontWeight = FontWeight.Medium
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FoodCategoryDefaults.categoryOptions.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategories.contains(category),
+                        onClick = { foodViewModel.toggleCategory(category) },
+                        label = { Text(category) },
+                        colors = FilterChipDefaults.filterChipColors()
+                    )
+                }
+            }
+
             Spacer(Modifier.weight(1f))
 
             Button(
                 onClick = {
+                    val categoriesString = selectedCategories.joinToString(",")
                     onSave?.invoke(
                         food.trim(),
                         selectedTime.format(timeFormatter),
                         meal,
                         "",
-                        selectedDate.format(dateFormatter)
+                        selectedDate.format(dateFormatter),
+                        categoriesString
                     )
                     foodViewModel.clearSearchResults()
+                    foodViewModel.clearSelectedCategories()
                 },
                 enabled = food.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),

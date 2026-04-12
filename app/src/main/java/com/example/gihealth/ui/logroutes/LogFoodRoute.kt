@@ -7,7 +7,7 @@ import com.example.gihealth.ui.viewmodel.FoodViewModel
 @Composable
 fun LogFoodRoute(
     foodViewModel: FoodViewModel,
-    onSave: (food: String, time: String, meal: String, ingredients: String, date: String) -> Unit,
+    onSave: (food: String, time: String, meal: String, ingredients: String, date: String, categories: String) -> Unit,
     onBackPressed: () -> Unit
 ) {
     LogFoodScreen(
