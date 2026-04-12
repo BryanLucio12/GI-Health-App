@@ -414,13 +414,14 @@ fun NavHostContainer(
         composable("logFood") {
             LogFoodScreen(
                 foodViewModel = foodVm,
-                onSave = { food, time, meal, ingredients, date ->
+                onSave = { food, time, meal, ingredients, date, categories ->
                     foodVm.insertFood(
                         name = food,
                         time = time,
                         meal = meal,
                         ingredients = ingredients,
-                        date = date
+                        date = date,
+                        categories = categories
                     )
                     navController.popBackStack()
                 },

@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.gihealth.data.FoodDatabase
 import com.example.gihealth.data.FoodEntity
+import com.example.gihealth.data.FoodCategoryDefaults
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,9 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchResults = MutableStateFlow<List<String>>(emptyList())
     val searchResults: StateFlow<List<String>> = _searchResults
 
+    private val _selectedCategories = MutableStateFlow<List<String>>(emptyList())
+    val selectedCategories: StateFlow<List<String>> = _selectedCategories
+
     init {
         refreshToday()
         refreshAllFoods()
@@ -37,7 +41,7 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun todayString(): String = LocalDate.now().format(dateFormatter)
 
-    fun insertFood(name: String, time: String, meal: String, ingredients: String, date: String) {
+    fun insertFood(name: String, time: String, meal: String, ingredients: String, date: String, categories: String) {
         viewModelScope.launch {
             dao.insert(
                 FoodEntity(
@@ -45,12 +49,31 @@ class FoodViewModel(application: Application) : AndroidViewModel(application) {
                     time = time,
                     meal = meal,
                     date = date,
-                    ingredients = ingredients
+                    ingredients = ingredients,
+                    categories = categories
                 )
             )
             refreshToday()
             refreshAllFoods()
         }
+    }
+
+    fun toggleCategory(category: String) {
+        val current = _selectedCategories.value.toMutableList()
+        if (current.contains(category)) {
+            current.remove(category)
+        } else {
+            current.add(category)
+        }
+        _selectedCategories.value = current
+    }
+
+    fun setSuggestedCategories(foodName: String) {
+        _selectedCategories.value = FoodCategoryDefaults.getSuggestedCategories(foodName)
+    }
+
+    fun clearSelectedCategories() {
+        _selectedCategories.value = emptyList()
     }
 
     fun refreshToday() {
