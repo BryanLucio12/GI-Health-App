@@ -50,7 +50,7 @@ import androidx.compose.material3.TabRowDefaults
 import com.example.gihealth.ui.viewmodel.BloodworkViewModel
 import com.example.gihealth.data.BloodworkEntity
 import androidx.compose.ui.text.style.TextAlign
-import java.time.format.DateTimeFormatter
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
