@@ -562,19 +562,12 @@ fun NavHostContainer(
                         .ifBlank { null }
                 },
 
-                // SYMPTOMS stays the same
+                // SYMPTOMS for selected calendar date
                 getSymptomsForDate = { date ->
-                    val startOfDay = date
-                        .atStartOfDay(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-                    val endOfDay = date
-                        .plusDays(1)
-                        .atStartOfDay(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
 
-                    val daySymptoms = symptoms.filter { it.timestamp in startOfDay until endOfDay }
+                    val daySymptoms = symptoms.filter { symptom ->
+                        parseSymptomDate(symptom.date) == date
+                    }
 
                     if (daySymptoms.isEmpty()) null
                     else daySymptoms.joinToString("\n") {
