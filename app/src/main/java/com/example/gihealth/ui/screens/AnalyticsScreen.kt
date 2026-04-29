@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import java.time.format.DateTimeFormatter
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -668,6 +669,21 @@ fun SeverityOverTimeCard(
     }
 }
 
+fun parseSymptomDate(dateString: String): LocalDate? {
+    return try {
+        LocalDate.parse(dateString) // handles "2026-04-28"
+    } catch (e: Exception) {
+        try {
+            LocalDate.parse(
+                dateString,
+                DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+            ) // handles "Apr 28, 2026"
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
 fun filterSymptomsForRange(
     symptoms: List<SymptomEntity>,
     range: String
@@ -680,9 +696,7 @@ fun filterSymptomsForRange(
 
     val filtered = symptoms.filter { symptom ->
 
-        val date = Instant.ofEpochMilli(symptom.timestamp)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
+        val date = parseSymptomDate(symptom.date) ?: return@filter false
 
         when (range) {
             "Today" -> date == today
@@ -694,10 +708,8 @@ fun filterSymptomsForRange(
         }
     }
 
-    return filtered.groupBy {
-        Instant.ofEpochMilli(it.timestamp)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
+    return filtered.groupBy { symptom ->
+        parseSymptomDate(symptom.date) ?: LocalDate.now()
     }
 }
 
