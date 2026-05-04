@@ -21,10 +21,15 @@ The GI Health App is designed to help users track, manage, and better understand
 - Track weight over time  
 - Monitor alcohol and cigarette consumption  
 - Record medications and dosages  
+- Log blood work results  
 
 ### Data Visualization  
 - Graphs for nutrition, weight, mood, and habits  
 - Trend tracking over time  
+
+### Reporting  
+- Generate PDF reports of health data  
+- Share reports with doctors for better insights  
 
 ---
 
