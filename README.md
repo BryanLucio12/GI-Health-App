@@ -1,19 +1,26 @@
-# GI-Health-App  
+# GI Health App  
 
 ## Overview  
-The GI Health App is designed to help users track, manage, and better understand what is triggering their gastrointestinal health. It provides a variety of tools for logging symptoms, monitoring diet, weight changes, and gaining insights into digestive health trends.  
+The GI Health App is designed to help users track, manage, and better understand what triggers their gastrointestinal health. It provides tools for logging symptoms, meals, weight changes, and daily habits, while helping users identify patterns over time.
+
+---
+
+## Motivation  
+We created this app to make digestive health tracking simple and useful. Many existing apps are either too complex or not focused on GI-specific needs, so our goal was to build something clean, easy to use, and actually helpful for everyday users.
+
+---
 
 ## Features  
 
 ### Meal Tracking  
 - Log meals throughout the day  
-- Capture detailed nutritional information  
-- Record the time and date of meals  
+- Capture nutritional information  
+- Record time and date of meals  
 
 ### Wellbeing Insights  
-- Happiness score tracker (mood logging)  
-- Compare lifestyle choices with GI health trends  
-- Journal logging at any given time of the day  
+- Mood tracking (happiness score)  
+- Journal logging at any time  
+- Compare lifestyle habits with GI trends  
 
 ### Health Monitoring  
 - Track weight over time  
@@ -21,16 +28,74 @@ The GI Health App is designed to help users track, manage, and better understand
 - Record medications and dosages  
 
 ### Data Visualization  
-- Graphs and reports for nutrition, weight, mood, and habits  
-- Trends over time for better health management  
+- Graphs for nutrition, weight, mood, and habits  
+- Trend tracking over time  
 
-## Tools & Technologies
+---
 
-- ***IDE:*** Android Studio
-- ***FrontEnd:*** Kotlin with Jetpack Compose
-- ***BackEnd:*** Kotlin or Java (TBD)
-- ***Framework:*** Jetpack Compose for UI
-- ***Version Control:*** GIT
+## Project Structure  
+
+
+GI-Health-App/
+GI-Health-App/
+│── app/
+│ ├── src/
+│ │ ├── main/
+│ │ │ ├── assets/ # App assets
+│ │ │ ├── java/com/example/gihealth/
+│ │ │ │ ├── data/ # Database, DAO, data handling
+│ │ │ │ ├── models/ # Data models / entities
+│ │ │ │ ├── ui/ # UI layer (Jetpack Compose)
+│ │ │ │ │ ├── logroutes/ # Navigation / routing
+│ │ │ │ │ ├── onboarding/ # Onboarding screens
+│ │ │ │ │ ├── screens/ # Main app screens
+│ │ │ │ │ ├── theme/ # UI theming (colors, typography)
+│ │ │ │ ├── viewmodel/ # ViewModels (business logic)
+│ │ │ │ ├── utils/ # Helper / utility functions
+│ │ │ │ ├── MainActivity.kt # App entry point
+│ │ │ ├── res/ # Resources (layouts, drawables)
+│ │ │ ├── AndroidManifest.xml # App configuration
+│ │ ├── androidTest/ # Instrumented tests
+│── .idea/ # IDE config
+│── .gitignore
+│── build.gradle.kts
+
+### How the App is Structured  
+
+The app follows an MVVM (Model-View-ViewModel) architecture:
+
+- **Models (`models/`)** → Define the data structure used throughout the app  
+- **Data (`data/`)** → Handles database operations using Room  
+- **UI (`ui/`)** → Built with Jetpack Compose and contains all screens and navigation  
+- **ViewModels (`viewmodel/`)** → Manage app logic and state between UI and data  
+- **Utils (`utils/`)** → Helper functions used across the app  
+
+### How Screens Are Built  
+
+All screens are built using Jetpack Compose and are located in the `ui/screens` folder. Each screen is implemented as a Kotlin file and represents a specific feature such as logging food, tracking weight, journaling, or viewing analytics.  
+
+Navigation between screens is handled through the `logroutes` package, allowing smooth transitions across the app.  
+
+## Technologies Used  
+
+- **IDE:** Android Studio  
+- **Language:** Kotlin  
+- **UI Framework:** Jetpack Compose  
+- **Architecture:** MVVM (ViewModel + LiveData)  
+- **Database:** Room  
+- **Async:** Kotlin Coroutines  
+- **Version Control:** Git 
+
+---
+
+## Dependencies  
+
+- Jetpack Compose  
+- AndroidX Lifecycle (ViewModel, LiveData)  
+- Room Database  
+- Kotlin Coroutines  
+
+---
 
 ## Setup
 Before running the GI Health App you need to make sure you have the following things download into your computer. We will be covering both Mac and Windows installation.
