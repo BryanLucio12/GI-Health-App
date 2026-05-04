@@ -119,11 +119,3 @@ Before running the GI Health App you need to make sure you have the following th
      ```bash
   cd GI-Health-App
      ```
-## Team  
-
-- Nicky Joy Thayil  
-- Ajay Ahluwalia  
-- Luis Compean  
-- Cody Mercer  
-- Bryan Lucio  
-- Erik Guerrero 
