@@ -5,11 +5,6 @@ The GI Health App is designed to help users track, manage, and better understand
 
 ---
 
-## Motivation  
-We created this app to make digestive health tracking simple and useful. Many existing apps are either too complex or not focused on GI-specific needs, so our goal was to build something clean, easy to use, and actually helpful for everyday users.
-
----
-
 ## Features  
 
 ### Meal Tracking  
