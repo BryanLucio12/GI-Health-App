@@ -35,31 +35,31 @@ We created this app to make digestive health tracking simple and useful. Many ex
 
 ## Project Structure  
 
-
-GI-Health-App/
+```
 GI-Health-App/
 │── app/
-│ ├── src/
-│ │ ├── main/
-│ │ │ ├── assets/ # App assets
-│ │ │ ├── java/com/example/gihealth/
-│ │ │ │ ├── data/ # Database, DAO, data handling
-│ │ │ │ ├── models/ # Data models / entities
-│ │ │ │ ├── ui/ # UI layer (Jetpack Compose)
-│ │ │ │ │ ├── logroutes/ # Navigation / routing
-│ │ │ │ │ ├── onboarding/ # Onboarding screens
-│ │ │ │ │ ├── screens/ # Main app screens
-│ │ │ │ │ ├── theme/ # UI theming (colors, typography)
-│ │ │ │ ├── viewmodel/ # ViewModels (business logic)
-│ │ │ │ ├── utils/ # Helper / utility functions
-│ │ │ │ ├── MainActivity.kt # App entry point
-│ │ │ ├── res/ # Resources (layouts, drawables)
-│ │ │ ├── AndroidManifest.xml # App configuration
-│ │ ├── androidTest/ # Instrumented tests
-│── .idea/ # IDE config
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── assets/                         # App assets
+│   │   │   ├── java/com/example/gihealth/
+│   │   │   │   ├── data/                      # Database, DAO, data handling
+│   │   │   │   ├── models/                    # Data models / entities
+│   │   │   │   ├── ui/                        # UI layer (Jetpack Compose)
+│   │   │   │   │   ├── logroutes/             # Navigation / routing
+│   │   │   │   │   ├── onboarding/            # Onboarding screens
+│   │   │   │   │   ├── screens/               # Main app screens
+│   │   │   │   │   ├── theme/                 # UI theming
+│   │   │   │   ├── viewmodel/                 # ViewModels
+│   │   │   │   ├── utils/                     # Helper functions
+│   │   │   │   ├── MainActivity.kt
+│   │   │   ├── res/
+│   │   │   ├── AndroidManifest.xml
+│   │   ├── androidTest/
+│   │   ├── test/
+│── .idea/
 │── .gitignore
 │── build.gradle.kts
-
+```
 ### How the App is Structured  
 
 The app follows an MVVM (Model-View-ViewModel) architecture:
